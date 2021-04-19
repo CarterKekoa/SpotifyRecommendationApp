@@ -141,3 +141,5 @@ class SpotifyAPI(object):
         if r.status_code not in range(200, 299):
             return {}
         return r.json()
+
+    
