@@ -124,3 +124,20 @@ class SpotifyAPI(object):
         if r.status_code not in range(200, 299):
             return {}
         return r.json()
+
+    def parse_for_track_id(self, response):
+        track_ids = {}
+        for val in response['tracks']['items']:
+            track_name = (val['track']['name'])
+            track_id = (val['track']['id'])
+            track_ids[track_name] = track_id
+        return track_ids
+
+    def get_track_audio_features(self, track_id):
+        base_url = 'https://api.spotify.com/v1/audio-features'
+        endpoint = f'{base_url}/{track_id}'
+        headers = self.get_access_header()
+        r = requests.get(endpoint, headers=headers)
+        if r.status_code not in range(200, 299):
+            return {}
+        return r.json()
