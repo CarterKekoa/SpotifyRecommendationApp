@@ -1,0 +1,68 @@
+Track Name,Track ID,Danceability,Energy,valence
+Are We There Yet,39LRXm8xZ3DP2W37sl1NDj,71.1,58.1,62.1
+More Than You Know,4q8PHoRsPUB52LFylX8Ulz,64.5,74.1,53.4
+Sweet Nothing (feat. Florence Welch),24LS4lQShWyixJ0ZrJXfJ5,57.3,92.9,58.2
+Wish You Were Mine - Radio Edit,412luShbmlgqqgYFStIB1s,65.4,83.2,40.7
+Personal,5kflnIKOUU6aLXkVXmJ6iK,52.2,69.7,44.7
+Sit Next to Me,14aqr8yZODpQyuqhSxLMTV,63.8,73.8,65.7
+All My Love (feat. Conor Maynard),1839RWzPRZCVgvamu4sHSN,59.0,87.1,30.4
+Rich Love (with Seeb),7aF09WaavZAmAWuUeYxlYD,59.3,86.8,49.6
+Closer,7BKLCZ1jbUBVqRi2FVlTVw,74.8,52.4,66.1
+Too Close,4sK96UnGx3NjBaqvfTG2dm,58.4,71.2,28.6
+Love Myself,4Y6IdA3e4wwLrbKHDjufaC,61.6,76.5,34.3
+Jackie Chan,49ziHtycEUnbFQtE8e8slt,74.2,83.8,69.4
+I Will Wait,3kyxRga5wDGbKdmxXssbps,48.5,73.5,45.6
+Feel It Still,7FESgYLcOufHqKlwrvJN60,78.0,79.8,77.1
+Creatures Of The Night,7E12QRk94o3DBLzkySXFqn,38.8,75.9,28.6
+Why,2jYmK1cb3Uya6FFsocdpzO,66.9,56.1,60.4
+Lonely Together (feat. Rita Ora),7DoN0sCGIT9IcLrtBDm4f0,64.8,66.7,21.7
+Hola (feat. Maluma),6ayTAnEwP3Yo4DOjLsN5r2,75.7,71.1,64.9
+Runaway (U & I),46lFttIf5hnUZMGvjK0Wxo,50.6,80.5,38.3
+Only One,3HMzCcVRL5fHNF0Uv73LFV,55.8,48.6,66.8
+Find Yourself,5efuBeQd7Y2Q2kXOeiMpRo,71.8,62.1,45.6
+On My Mind,6270Enqm1xMYwAJxaVeQzN,69.9,68.4,72.6
+Cake By The Ocean,42ftjU4cTN5UTRksyqBKZJ,77.1,76.0,88.1
+Say Hi,1wv65oTk6ezLpMYLaVeSeT,32.1,67.5,27.4
+Weak,45iMRHmfLZu3yjdZ8P5e3t,67.2,64.2,65.6
+The Middle,2ARqIya5NAuvFVHSN3bL0m,74.8,65.2,43.1
+Youngblood,55S2PQgSMYAhgoTCcGCDfw,59.6,85.4,15.2
+Know No Better,6BKeNWeUqxmvQ09Gxd3ZGX,73.8,81.4,48.3
+A Different Way (with Lauv),1YMBg7rOjxzbya0fPOYfNX,78.4,75.7,58.7
+Riding Shotgun (feat. Bonnie McKee),41W4YKwP7DPxoplPA2U0PW,81.7,85.4,62.2
+Sleepless - Radio Edit,15uFqHGAOvaGCqikvgiW6w,72.2,63.5,53.0
+Glad You Came,3AGOgQzp0YcPH41u9p7dOp,61.0,84.1,43.1
+"Let Me Go (with Alesso, Florida Georgia Line & watt)",5Gu0PDLN4YJeW75PpBSg9p,66.4,70.8,74.2
+Outside (feat. Ellie Goulding),7MmG8p0F9N3C4AXdK6o6Eb,64.6,82.3,41.8
+Thinking About You,6MWfLm5mekBlDaWUzUJvhU,78.8,60.4,16.0
+Hot2Touch,4o4sj7dVrT51NKMyeG8T5y,75.3,71.7,85.9
+Truth or Dare,54uyFEMcG3wnZ1JSRS3QtI,71.5,58.1,37.8
+Row The Body (feat. French Montana),5qmR4IEKBUpgPa14pGuWuS,70.1,69.5,62.4
+Get Loose,2vlVGelTcX3F7lythTb0Bh,73.7,66.7,65.8
+Pumped Up Kicks,7w87IxuO7BDcJ3YUqCyMTT,73.3,71.0,96.5
+Counting Stars,6sy3LkhNFjJWlaeSMNwQ62,66.4,70.5,47.7
+Tequila - R3HAB Remix,2aAyDqzwEeVIigSMFM1tNS,57.8,86.2,54.7
+Mmm Yeah (feat. Pitbull),4fs51wRnDJo4XrRdk6h0GD,71.2,92.2,97.6
+Somebody To Love,6LtrSXoBzbTF3SxcJb1Fnm,71.9,84.0,63.6
+Feel Good Inc.,0d28khcov6AiegSCpG5TuT,81.8,70.5,77.2
+"Sugar, We're Goin Down",2TfSHkHiFO4gRztVIkggkE,49.4,84.2,57.4
+Make You Feel It,43QG9Yf08wxD0QFN4HYFvy,43.0,39.2,12.7
+Love No More,0E8WJOFs2eWD67USh7C6Qd,76.6,67.4,21.4
+Hey Julie! (feat. Lil Yachty),3fVIFpU3VdSEoR82DaYe79,80.3,49.9,74.9
+International Love (feat. Chris Brown),62zFEHfAYl5kdHYOivj4BC,67.0,85.5,64.8
+Leavin',20ORwCJusz4KS2PbTPVNKo,68.7,71.0,88.6
+Ridin' Solo,7ksYJ95P5vP87A0GH34CIk,44.2,83.0,57.8
+"Alone, Pt. II",0bMbDctzMmTyK2j74j3nF3,67.0,66.8,60.8
+Where The Love Goes,0Xa7b1Kw7I08dD2k7zZKtV,73.6,67.8,52.9
+Good Nights (feat. Mascolo),36fRbuu9QkKVDR1j7jTI2U,84.9,48.3,28.2
+Freedom,5Gj1wG8b12VQdEd3hUuSwo,71.5,63.5,39.0
+Malibu,31k41EAntOsjbRBcAASfiL,62.9,82.8,51.2
+Lucky Strike,6tVrmsbI5HVDgOlFSTrQjB,67.4,74.0,43.1
+Beautiful People (feat. Khalid),4evmHXcjt3bTUHD1cvny97,64.0,64.8,54.8
+ily (i love you baby) (feat. Emilee),62aP9fBQKYKxi7PDXwcUAS,67.4,77.4,33.0
+Rescue Me,0mjAU3yKR1QnXnHtjGJqTM,75.9,60.5,64.0
+Come & Go (with Marshmello),7y7w4tl4MaRC2UMEj1mPtr,62.5,81.4,53.5
+Ocean Drive,0b6wdul3A5sQNpIOv03OxP,68.6,71.8,55.7
+Bad Bitch (feat. Ty Dolla $ign),4ZJPwET9Jrgpkqi4Vo3Yg8,65.6,61.5,36.6
+Say It (feat. Tove Lo),217xrcrbBtgJhvlHicxTSH,59.8,53.2,26.1
+BED,7jXQUrVhEpXdymfFWNDnQW,66.3,78.3,62.2
+Jalebi Baby,40R5dXDbS3mLG9ng7COXtt,67.8,88.4,77.3
