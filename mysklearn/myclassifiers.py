@@ -1,12 +1,3 @@
-##############################################
-# Programmer: Carter Mooring
-# Class: CPCS 322-02, Spring 2021
-# Programming Assignment #6
-# April 14th, 2021
-# 
-# Description: 
-##############################################
-
 import mysklearn.myutils as myutils
 
 class MySimpleLinearRegressor:
@@ -42,33 +33,10 @@ class MySimpleLinearRegressor:
             y_train(list of numeric vals): The target y values (parallel to X_train) 
                 The shape of y_train is n_train_samples
         """
-        # New lists used for when the there is a nested list
-        new_list_x = []
-        new_list_y = []
-        # These will store true if there is a nested list passed through
-        use_new_x = any(isinstance(i, list) for i in X_train)
-        use_new_y = any(isinstance(i, list) for i in y_train)
-        
-        # if there exists a nested list
-        if (use_new_x and use_new_y):
-            for j in X_train:
-                new_list_x.append(j[0])
-            for k in y_train:
-                new_list_y.append(k[0])
-            m, b = myutils.compute_slope_intercept(new_list_x, new_list_y)
-        elif (use_new_x):
-            for j in X_train:
-                new_list_x.append(j[0])
-            m, b = myutils.compute_slope_intercept(new_list_x, y_train)
-        elif (use_new_y):
-            for j in y_train:
-                new_list_y.append(j[0])
-            m, b = myutils.compute_slope_intercept(X_train, new_list_y)
-        else:
-            # else there is no nested list
-            m, b = myutils.compute_slope_intercept(X_train, y_train)
-
-        # store the slope and intercept
+        X_train_single = []
+        for sub in X_train:
+            X_train_single.append(sub[0])
+        m, b = myutils.compute_slop_intercept(X_train_single, y_train)
         self.slope = m
         self.intercept = b
 
@@ -85,13 +53,9 @@ class MySimpleLinearRegressor:
             y_predicted(list of numeric vals): The predicted target y values (parallel to X_test)
         """
         y_predicted = []
-        # for each value in the X_test list
         for val in X_test:
-            # y = mx + b equation
-            prediction = (self.slope * val[0]) + self.intercept
-            y_predicted.append(prediction)
+            y_predicted.append((val[0]*self.slope) + self.intercept)
         return y_predicted
-
 
 class MyKNeighborsClassifier:
     """Represents a simple k nearest neighbors classifier.
@@ -146,18 +110,16 @@ class MyKNeighborsClassifier:
             neighbor_indices(list of list of int): 2D list of k nearest neighbor
                 indices in X_train (parallel to distances)
         """
-        # scale the list and test list
-        scaled_X_train, scaled_X_test = myutils.scale(self.X_train, X_test)
-        
-        all_distances = []
-        all_indices = []
-        # for each value in the scaled test list
-        for val in scaled_X_test:
-            # the prep gives us the distance and indice list 
-            distance_list, indice_list = myutils.kneighbors_prep(scaled_X_train, val, self.n_neighbors)
-            all_distances.append(distance_list)
-            all_indices.append(indice_list)
-        return all_distances, all_indices
+        scaled_train, scaled_test = myutils.scale(self.X_train, X_test)
+
+        distances = []
+        indices = []
+        for val in scaled_test:
+            dists, inds = myutils.kneighbors_helper(scaled_train, val, self.n_neighbors)
+            distances.append(dists)
+            indices.append(inds)
+ 
+        return distances, indices
 
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
@@ -169,24 +131,42 @@ class MyKNeighborsClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        predictions = []
-        distance, indices = self.kneighbors(X_test)
+        res = []
+        _, indices = self.kneighbors(X_test)
         labels = []
-
-        # for row in indices list
         for row in indices:
-            temp = []
+            asd = []
             for i in row:
-                val = self.y_train[i]
-                temp.append(val)
-            labels.append(temp)
+                curr = self.y_train[i]
+                asd.append(curr)
+            labels.append(asd)
  
-        # for each row in labels
         for row in labels:
-            predictions.append(myutils.get_label(row))
+            res.append(myutils.get_label(row))
  
-        return predictions
+        return res
 
+    def categorical_predict(self, X_test):
+        """Makes predictions for test instances in X_test when the test instances are strings.
+
+        Args:
+            X_test(list of list of numeric vals): The list of testing samples
+                The shape of X_test is (n_test_samples, n_features)
+                
+        Returns:
+            y_predicted(list of obj): The predicted target y values (parallel to X_test)
+        """
+        predicted = []
+        for i in range(len(X_test)):
+            t = []
+            for j in range(len(self.X_train)):
+                count = 0
+                for k in range(len(X_test[0])):
+                    if X_test[i][k] == self.X_train[j][k]:
+                        count += 1
+                t.append(count)
+            predicted.append(self.y_train[t.index(max(t))])
+        return predicted
 class MyNaiveBayesClassifier:
     """Represents a Naive Bayes classifier.
 
@@ -230,8 +210,9 @@ class MyNaiveBayesClassifier:
         """
         self.X_train = X_train
         self.y_train = y_train
-        self.priors = myutils.priors(y_train)
-        self.posteriors = myutils.posteriors(X_train, y_train, self.priors)
+
+        self.priors = myutils.get_priors(y_train)
+        self.posteriors = myutils.get_posteriors(X_train, y_train, self.priors)
 
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
@@ -243,29 +224,12 @@ class MyNaiveBayesClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        prediction = []
-        prob = 1
-        unique_y_vals = myutils.get_unique(self.y_train)
-
-        # for each row in X_test
-        for row in X_test:
-            probability = []
-            # for each unique value in the y_train
-            for unique in unique_y_vals:
-                prob *= self.priors[unique]
-                # go through each value in the row and calculate its probabilty
-                for i, val in enumerate(row):
-                    # if the value is noted in the table
-                    if val in self.posteriors[unique][i]:
-                        prob *= self.posteriors[unique][i][val]
-                    else:
-                        prob = 0
-                probability.append(prob)
-                prob = 1
-            # compare to see which label to pick
-            prediction.append(unique_y_vals[myutils.get_prediction_index(probability)])
-        #print(prediction)
-        return prediction
+        y_predicted = []
+        for test in X_test:
+            probs = myutils.compute_probs(test, self.priors, self.posteriors)
+            prediction = myutils.predict_from(probs)
+            y_predicted.append(prediction)
+        return y_predicted
 
 class MyDecisionTreeClassifier:
     """Represents a decision tree classifier.
@@ -285,7 +249,7 @@ class MyDecisionTreeClassifier:
         """Initializer for MyDecisionTreeClassifier.
 
         """
-        self.X_train = None
+        self.X_train = None 
         self.y_train = None
         self.tree = None
 
@@ -308,25 +272,13 @@ class MyDecisionTreeClassifier:
         self.X_train = X_train
         self.y_train = y_train
 
-        att_vals = {}
-        headers = ['att' + str(i) for i in range(len(self.X_train[0]))]
-        
-        # for each header, grab the index also
-        for i, header in enumerate(headers):
-            att_vals[header] = [] # for each header, make an empty list
-            # for each value in the x_train
-            for val in self.X_train:
-                # if the value is not yet in the attribute dict, then add it
-                if val[i] not in att_vals[header]:
-                    att_vals[header].append(val[i])
-        # for each key and value in the dictionary, sort the values
-        for key, value in att_vals.items():
-            att_vals[key] = sorted(value)
+        attribute_domains, header = myutils.get_att_domain(X_train)
 
         training_set = [self.X_train[i] + [self.y_train[i]] for i in range(len(self.X_train))]
-        attributes = headers.copy()
-        self.tree = myutils.tdidt(training_set, attributes, att_vals, headers) # call the tdidt function
-        
+        available_attributes = header.copy()
+        self.tree = myutils.tdidt(training_set, available_attributes, attribute_domains, header)
+
+
         
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
@@ -338,13 +290,10 @@ class MyDecisionTreeClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        y_predicted = [] # initialize empty list
-
-        # for each instance in x_test
+        y_predicted = []
         for instance in X_test:
-            # get the predicted target y valeus with helper function
-            y_prediction = myutils.y_pred(instance, self.tree)
-            y_predicted.append(y_prediction) # append to list
+            y_pred = myutils.classifySample(instance, self.tree)
+            y_predicted.append(y_pred)
         return y_predicted
 
     def print_decision_rules(self, attribute_names=None, class_name="class"):
@@ -356,7 +305,23 @@ class MyDecisionTreeClassifier:
             class_name(str): A string to use for the class name in the decision rules
                 ("class" if a string is not provided and the default name "class" should be used).
         """
-        rules = myutils.Rules(tree=self.tree, rules=[], chain='' , previous_value='', class_name=class_name)
+        rules = myutils.Get_Rules(tree=self.tree, rules=[], chain='' , previous_value='', class_name=class_name)
         for rule in rules:
             print(rule)
 
+    # BONUS METHOD
+    def visualize_tree(self, dot_fname, pdf_fname, attribute_names=None):
+        """BONUS: Visualizes a tree via the open source Graphviz graph visualization package and its DOT graph language (produces .dot and .pdf files).
+
+        Args:
+            dot_fname(str): The name of the .dot output file.
+            pdf_fname(str): The name of the .pdf output file generated from the .dot file.
+            attribute_names(list of str or None): A list of attribute names to use in the decision rules
+                (None if a list is not provided and the default attribute names based on indexes (e.g. "att0", "att1", ...) should be used).
+
+        Notes: 
+            Graphviz: https://graphviz.org/
+            DOT language: https://graphviz.org/doc/info/lang.html
+            You will need to install graphviz in the Docker container as shown in class to complete this method.
+        """
+        pass # TODO: (BONUS) fix this

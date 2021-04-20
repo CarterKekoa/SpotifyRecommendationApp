@@ -1,26 +1,510 @@
-##############################################
-# Programmer: Carter Mooring
-# Class: CPCS 322-02, Spring 2021
-# Programming Assignment #6
-# April 14th, 2021
-# 
-# Description: 
-##############################################
-
-import numpy as np
-from numpy.lib.arraysetops import ediff1d
-import mysklearn.mypytable as mypytable
-import operator
 import copy
-import random
-import itertools
-from collections import Counter
-from tabulate import tabulate
-from operator import itemgetter
+import operator
 import math
 import re
+from functools import reduce
+from tabulate import tabulate
+from operator import itemgetter
+import random
+
+def compute_slop_intercept(x, y):
+    """Computes the slop intercet of two data sets
+
+    Args:
+        X(list of list of obj): The list of samples
+            The shape of X is (n_samples, n_features)
+        y(list of obj): The target y values (parallel to X)
+            The shape of y is n_samples
+    Returns:
+        m: the m in the equation y = mx + b
+        b: the b in the equation y = mx + b
+    """
+    x_mean = sum(x)/len(x)
+    y_mean = sum(y)/len(y)
+    n = len(x)
+
+    m_numer = sum([xi*yi for xi,yi in zip(x, y)]) - n * x_mean * y_mean
+    m_denom = sum([xi**2 for xi in x]) - n * x_mean**2
+
+    m = m_numer / m_denom
+    b = y_mean - m * x_mean
+
+    return m, b
+
+def kneighbors_helper(scaled_train, scaled_test, n_neighbors):
+    """Helper function for KNN to compute distances and indicies.
+
+    Args:
+        scaled_train(list of list of obj): list of training set values
+        scaled_test(list of obj): List of testing set values
+        n_neighbors(int): amount of folds
+    Returns:
+        distace: List of distance values
+        indicies: List of indice values
+    """
+    # deep copy so you don't modify the original
+    scaled_train_copy = copy.deepcopy(scaled_train)
+    scaled_test_copy = copy.deepcopy(scaled_test)
+    for i, instance in enumerate(scaled_train_copy):
+        # append the original row index
+        instance.append(i)
+        # append the distance
+        dist = compute_euclidean_distance(instance[:-1], scaled_test_copy)
+        instance.append(dist)
+    
+    train_sorted = sorted(scaled_train_copy, key=operator.itemgetter(-1))
+ 
+    top_k = train_sorted[:n_neighbors]
+    distances = []
+    indices = []
+    for row in top_k:
+        distances.append(row[-1])
+        indices.append(row[-2])
+    
+    return distances, indices
+
+def compute_euclidean_distance(v1, v2):
+    """Computes the euclidian distance of two points
+
+    Args:
+        v1(List of ints or floats): List of points 
+        v2(Lists of ints of floats): List of points
+    Returns:
+        the average Euclidian distance of all points
+    """
+    assert len(v1) == len(v2)
+
+    dist = (sum([(v1[i] - v2[i]) ** 2 for i in range(len(v1))])) ** (1/2)
+    return dist 
+
+def get_rand_rows(table, num_rows):
+    """gets specified number of random rows
+
+    Args:
+         table(List of obj): data set
+         num_rows(int): number of random rows to get
+    Returns:
+            rand_rows: the specified number of rows
+    """
+    rand_rows = []
+    for _ in range(num_rows):
+        rand_rows.append(table.data[random.randint(0,len(table.data))-1])
+    return rand_rows
+
+def scale(vals, test_vals):
+    """Scales all values passed in
+
+    Args:
+         vals(list of list of numeric vals): The list of test instances (samples). 
+                The shape of X_train is (n_train_samples, n_features)
+         test_vals(list of list of numeric vals): The list of training instances (samples). 
+                The shape of X_train is (n_train_samples, n_features)
+    Returns:
+        res[:len(vals)]: List of all train values scaled
+        res[len(vals):]: List of all test values scaled
+    """
+    res = []
+    max_vals = []
+    min_vals = []
+    for i in range(len(vals[0])):
+        max_vals.append(max([val[i] for val in vals]))
+        min_vals.append(min([val[i] for val in vals]))
+    for row in vals:
+        curr = []
+        for i in range(len(row)):
+            curr.append((row[i]-min_vals[i])/(max_vals[i]-min_vals[i]))
+        res.append(curr)
+    for row in test_vals:
+        curr = []
+        for i in range(len(row)):
+            curr.append((row[i]-min_vals[i])/(max_vals[i]-min_vals[i]))
+        res.append(curr)
+    return res[:len(vals)], res[len(vals):]
+
+def get_label(labels):
+    """Gets all the unique labels from the list passsed in 
+
+    Args:
+         labels(List of values): List of all labels
+    Returns:
+        res: List of all unique labels
+    """
+    unique_labels = []
+    for val in labels:
+        if val not in unique_labels:
+            unique_labels.append(val)
+    counts = [0 for _ in unique_labels]
+    for i, val in enumerate(unique_labels):
+        for lab in labels:
+            if val == lab:
+                counts[i] += 1
+    max_count = 0
+    res = ''
+    for i, val in enumerate(counts):
+        if val > max_count:
+            res = unique_labels[i]
+ 
+    return res
+
+def randomize_in_place(alist, parallel_list=None):
+    """Randomixes two list in parallel
+
+    Args:
+         alist: List of values
+         parallel_list: List of values but could be none
+    """
+    for i in range(len(alist)):
+        # generate a random index to swap the element at i with
+        rand_index = random.randrange(0, len(alist)) # [0, len(alist))
+        alist[i], alist[rand_index] = alist[rand_index], alist[i]
+        if parallel_list is not None:
+            parallel_list[i], parallel_list[rand_index] = parallel_list[rand_index], parallel_list[i]
+
+def get_from_folds(X_vals, y_vals, train_folds, test_folds):
+    """This method gives me my training sets and my testing sets
+
+    Args:
+        X_vals: list of x values
+        y_vals: List of y values
+        train_folds: List of training folds
+        test_folds: List of testing folds
+         
+    Returns:
+        X_train: List of X trining sets
+        y_train: List of y training sets
+        X_test: List of X test sets
+        y_test List of y test sets
+    """
+    X_train = []
+    y_train = []
+    for row in train_folds:
+        for i in row:
+            X_train.append(X_vals[i])
+            y_train.append(y_vals[i])
+
+    X_test = []
+    y_test = []
+    for row in test_folds:
+        for i in row:
+            X_test.append(X_vals[i])
+            y_test.append(y_vals[i])
+
+    return X_train, y_train, X_test, y_test
+
+def group_by(x, y):
+    """Groups x based on the values in y
+
+    Args:
+         x: List of values
+         y: List of values
+    Returns:
+        grouped: list of all values in there grouped order 
+    """
+    group1 = []
+    group2 = []
+    grouped = []
+    instance = y[0]
+
+    for i in range(len(y)):
+        if y[i] == instance:
+            group1.append(i)
+        else:
+            group2.append(i)
+
+    
+    grouped.append(group1)
+    grouped.append(group2)
+            
+    return grouped
+
+def add_conf_stats(matrix):
+    """adds stats to our matrix correctly
+
+    Args:
+        matrix: 2D list of values
+    """
+    del matrix[0]
+    for i,row in enumerate(matrix):
+        row[0] = i+1
+        row.append(sum(row))
+        row.append(round(row[i+1]/row[-1]*100,2))
+
+def print_tabulate(table, headers):
+    """Prints our matrix nicely
+
+    Args:
+        table: List of all table values
+        headers: List of our column headers
+    """
+    print(tabulate(table, headers, tablefmt="rst"))
+
+def get_priors(y_train):
+    """Gets priors based on y_train results passed in
+
+    Args:
+        y_train(list of obj): The target y values (parallel to X_train)
+                The shape of y_train is n_train_samples
+    Returns:
+        priors_dict: This is a dictionary filled with all the priors
+    """
+    unique = []
+    counts = []
+    for label in y_train:
+        if label in unique:
+            index = unique.index(label)
+            counts[index] = counts[index] + 1
+        else:
+            unique.append(label)
+            counts.append(1)
+    
+    denom = len(y_train)
+    priors_dict = {}
+    for i in range(len(unique)):
+        label = unique[i]
+        priors_dict[label] = counts[i]/denom
+    
+    return priors_dict
+
+def get_posteriors(X_train, y_train, priors):
+    """Gets posteriors based on X_train, y_train and prior results passed in
+
+    Args:
+        X_train(list of list of obj): The list of training instances (samples). 
+            The shape of X_train is (n_train_samples, n_features)
+        y_train(list of obj): The target y values (parallel to X_train)
+            The shape of y_train is n_train_samples
+        priors(dictionary): The prior probabilities computed for each
+            label in the training set.
+    Returns:
+        priors_dict: This is a dictionary filled with all the priors
+    """
+    posteriors = {}
+
+    for k, _ in priors.items():
+        posteriors[k] = {}
+        for i in range(len(X_train[0])):
+            posteriors[k][i] = {}
+    
+    for j in range(len(X_train)):
+        for i in range(len(X_train[j])):
+            prior_label = y_train[j]
+            posterior_label = X_train[j][i]
+            denom = priors[prior_label] * len(y_train)
+            if posterior_label in posteriors[prior_label][i]:
+                posteriors[prior_label][i][posterior_label] = ((posteriors[prior_label][i][posterior_label] * denom) + 1) / denom
+            else:
+                posteriors[prior_label][i][posterior_label] = 1 / denom
+    return posteriors
+
+def multiply(a, b):
+    """Returns product of both number passed in
+
+    Args:
+        a(int): Any number passed in my user
+        b(int): Any number passed in by user
+    Returns:
+        a*b
+    """
+    return a*b
+
+def compute_probs(test, priors, posteriors):
+    """Computes probability of outcome based on test, priors, and posteriors
+
+    Args:
+        test (list of list of obj): The list of testing instances (samples). 
+        priors(dictionary): The prior probabilities computed for each
+            label in the training set.
+        posteriors(YOU CHOOSE THE MOST APPROPRIATE TYPE): The posterior probabilities computed for each
+            attribute value/label pair in the training set.
+    Returns:
+        probs_dictionary: Dictionary of all probability values
+    """
+    probs_dictionary = {}
+    for k, v in priors.items():
+        prior = v
+        dictionary = posteriors[k]
+        probs = []
+        probs.append(prior)
+        for i in range(len(test)):
+            if test[i] in dictionary[i]:  
+                probs.append(dictionary[i][test[i]])
+            else:
+                probs.append(0)
+        probability = reduce(multiply, probs)
+        probs_dictionary[k] = probability
+    
+    return probs_dictionary
+
+def predict_from(probs_dictionary):
+    """Computes prediction values based on probability values passed in
+
+    Args:
+        probs_dictionary(dictionary): Dictionary of all probability values
+    Returns:
+        prediction(string): prediction based on probability values
+    """
+    max = 0
+    prediction = ""
+    for k, v, in probs_dictionary.items():
+        if v >= max:
+            prediction = k
+            max = v
+    return prediction
+
+def convert_to_rating(mpg_list):
+    """Accepts a list of mpg values and rankes them based on a rating metric
+
+    Args:
+        mpg_list(List): various mpg values
+    Returns:
+        mpg_list(list): List of all mpg values replaced by there coresponding rating
+    """
+    for i in range(len(mpg_list)):
+        mpg_list[i] = get_rating(mpg_list[i])
+    return mpg_list
+        
+def get_rating(mpg):
+    """ Accepts a mpg value and returns the rating for that value 
+
+    Args:
+        mpg(int/float): unique mpg value 
+    Returns:
+        a rating from 1 - 10
+    """
+    if mpg < 14:
+        return 1
+    elif mpg < 15:
+        return 2
+    elif mpg < 17:
+        return 3
+    elif mpg < 20:
+        return 4
+    elif mpg < 24:
+        return 5
+    elif mpg < 27:
+        return 6
+    elif mpg < 31:
+        return 7
+    elif mpg < 37:
+        return 8
+    elif mpg < 45:
+        return 9
+    return 10
+
+def convert_to_rank(list):
+    for i in range(len(list)):
+        list[i] = get_rank(list[i])
+    return list
+
+def get_rank(pop):
+    if pop <= 10:
+        return 1
+    elif pop <= 20:
+        return 2
+    elif pop <= 30:
+        return 3
+    elif pop <= 40:
+        return 4
+    elif pop <= 50:
+        return 5
+    elif pop <= 60:
+        return 6
+    elif pop <= 70:
+        return 7
+    elif pop <= 80:
+        return 8
+    elif pop <= 90:
+        return 9
+    else:
+        return 10
+
+def convert_weight(weight):
+    """Accepts a list of weight values and rankes them based on a rating metric 
+
+    Args:
+        weight(List): various weight values
+    Returns:
+        res(list): all weight values converted to rating
+    """
+    res = []
+    for val in weight:
+        res.append(get_weight(val))
+    return res
+
+def get_weight(val):
+    """ Accepts a weight value and returns the rating for that value 
+
+    Args:
+        val(int/float): unique weight value 
+    Returns:
+        cur(int): a rating from 1 - 5
+    """
+    if val < 2000:
+        curr = 1
+    elif val < 2500:
+        curr = 2
+    elif val < 3000:
+        curr = 3
+    elif val < 3500:
+        curr = 4
+    else:
+        curr = 5
+    return curr
+
+def get_accuracy(y_split, predicted):
+    """takes in y_split and predicted values and computes the accuracy of our predictions
+
+    Args:
+        y_split(list): list of y split values
+        predicted(list): list of all predicted values
+    Returns:
+        accuracy of predictions
+    """
+    correct = 0
+    for index in range(len(y_split)):
+        if y_split[index] == predicted[index]:
+            correct += 1
+    return correct / len(predicted)
+
+
+
+def titanic_stats(matrix):
+    """creates a row that displays the total of all columns in a matrix at the bottom of the matric passed in
+
+    Args:
+        matrix(list): a list of values that are displayed as a confusion matrix
+    """
+    for i,row in enumerate(matrix):
+        row.append(sum(row))
+        row.append(round(row[i]/row[-1]*100,2))
+        row.insert(0, i+1)
+    matrix.append(['Total', matrix[0][1]+matrix[1][1], matrix[0][2]+matrix[1][2], matrix[0][3]+matrix[1][3], \
+                   round(((matrix[0][1]+matrix[1][2])/(matrix[0][3]+matrix[1][3])*100),2)])
+
+def get_unique(vals):
+    """get all unique values from list passed in
+
+    Args:
+        vals(list): list of values all of same type
+    Returns:
+        unique(list): all unique values in vals
+    """
+    unique = []
+    for val in vals:
+        if val not in unique:
+            unique.append(val)
+    return unique
 
 def get_att_domain(X_train):
+    """get attribute domains based on X_train
+
+    Args:
+        X_train(list of list of obj): The list of training instances (samples). 
+                The shape of X_train is (n_train_samples, n_features)
+    Returns:
+        Attribute_domains(Dict): domain of evvery attribute
+        header(list): att + str(i) for the lengh if X_train[0]
+    """
     header = ['att' + str(i) for i in range(len(X_train[0]))]
     attribute_domains = {}
     for i, h in enumerate(header):
@@ -32,46 +516,16 @@ def get_att_domain(X_train):
         for k, v in attribute_domains.items():
             attribute_domains[k] = sorted(v)
     return attribute_domains, header
-    
-def partition_instances(instances, split_attribute, attribute_domains, header):
-    # this is a group by split_attribute's domain, not by
-    # the values of this attribute in instances
-    # example: if split_attribute is "level"
-    attribute_domain = attribute_domains[split_attribute] # ["Senior", "Mid", "Junior"]
-    attribute_index = header.index(split_attribute) # 0
-    # lets build a dictionary
-    partitions = {} # key (attribute value): value (list of instances with this attribute value)
-    # task: try this!
-    for attribute_value in attribute_domain:
-        partitions[attribute_value] = []
-        for instance in instances:
-            if instance[attribute_index] == attribute_value:
-                partitions[attribute_value].append(instance)
-    return partitions
-    
-def all_same_class(instances):
-    label = None
-    first_iteration = True
-    for row in instances:
-        if first_iteration:
-            first_iteration = False
-            label = row[-1]
-        if row[-1] != label:
-            return False
-    return True
 
-def majority_vote(partition):
-    class_count = {}
-    print("2", partition)
-    for row in partition:
-        print("1", row)
-        if row[-1] not in class_count:
-            class_count[row[-1]] = 0
-        class_count[row[-1]] += 1
-    class_with_majority = max(class_count.items(), key=itemgetter(1))[0]
-    return class_with_majority
 
 def entropy(instances, idx):
+    """calculates entropy based on distance and index passed in
+
+    Args:
+        instances(list): list of values
+    Returns:
+        partitions(list): list of partitions
+    """
     partitions = []
     distinct = []
     for instance in instances:
@@ -84,6 +538,13 @@ def entropy(instances, idx):
     return partitions
 
 def select_attribute(instances, available_att):
+    """Selects which attribute to split on using entropy
+    Args:
+        instances(list): list of values
+        available_att(list): list of available attributes
+    Returns:
+        available_att[att_idx](str): specific attribute to split on
+    """
     attribute_entropies = []
     for attribute in available_att:
         idx = int(attribute[-1])
@@ -120,71 +581,134 @@ def select_attribute(instances, available_att):
     att_idx = attribute_entropies.index(min_entropy)
     return available_att[att_idx]
 
+def partition_instances(instances, split_attribute, attribute_domains, header):
+    """Selects a partition instance
+    Args:
+        instances(list): list of instances
+        split_attribute(str): attribute to split on
+        attribute_domains(list): list of available attributes
+        header(list): list of header names
+    Returns:
+        partitions(dic): dictionary of all partitions in tree
+    """
+    attribute_domain = attribute_domains[split_attribute]
+    attribute_index = header.index(split_attribute)
+    partitions = {}
+    for attribute_value in attribute_domain:
+        partitions[attribute_value] = []
+        for instance in instances:
+            if instance[attribute_index] == attribute_value:
+                partitions[attribute_value].append(instance)
+    return partitions
+
+def check_all_same_class(instances):
+    """checks all instances to see if they are in same class
+    Args:
+        instances(list): list of instances
+    Returns:
+        true: if in same class false otherwise
+    """
+    first_label = instances[0][-1]
+    for instance in instances:
+        if instance[-1] != first_label:
+            return False 
+    return True
+
+def majority_vote(partition):
+    """computes majority vote in the case of a Case 2
+    Args:
+        partitions(dic): dictionary of all partitions in tree
+    Returns:
+        class_with_majority: majority class name
+    """
+    class_count = {}
+    for row in partition:
+        if row[-1] not in class_count:
+            class_count[row[-1]] = 0
+        class_count[row[-1]] += 1
+    class_with_majority = max(class_count.items(), key=itemgetter(1))[0]
+    return class_with_majority
 
 def tdidt(current_instances, available_attributes, attribute_domains, header):
-    print(current_instances)
-    print()
-    print(available_attributes)
-    print()
-    print( attribute_domains)
-    print()
-    print( header)
-    print()
+    """computes TDIDT on a set of values
+    Args:
+        instances(list): list of instances
+        available_attributes(list): list of available attributes 
+        attribute_domains(list): list of available attributes
+        header(list): list of header names
+    Returns:
+        tree(nested list): tree representation of data
+    """
     split_attribute = select_attribute(current_instances, available_attributes)
-    available_attributes.remove(split_attribute) # cannot split on same attr twice in a branch
-    tree = ['Attribute', split_attribute]
+    available_attributes.remove(split_attribute)
+    tree = ["Attribute", split_attribute]
 
     partitions = partition_instances(current_instances, split_attribute, attribute_domains, header)
+    classes_count = {}
+    total_instances = 0
+    for _, values in partitions.items():
+        total_instances += len(values)
+        for val in values:
+            if val:
+                if val[-1] not in classes_count:
+                    classes_count[val[-1]] = 0
+                classes_count[val[-1]] += 1
+    majority_class = max(classes_count.items(), key=itemgetter(1))
+    m_vote, majority_count = majority_class[0], majority_class[1]
 
-    prev = []
     for attribute_value, partition in partitions.items():
-        value_subtree = ['Value', attribute_value]
-        subtree = []
-        # TODO: appending leaf nodes and subtrees appropriately to value_subtree
-        #    CASE 1: all class labels of the partition are the same => make a leaf node
-        if len(partition) > 0 and all_same_class(partition): # all same class checks if all the other values equal the first one
-            print("0.1")
-            subtree = ['Leaf', partition[0][-1], len(partition), len(current_instances)]
-            value_subtree.append(subtree)
-        #    CASE 2: no more attributes to select (clash) => handle clash w/majority vote leaf node
+        value_subtree = ["Value", attribute_value]
+        if len(partition) > 0 and check_all_same_class(partition):
+            value_subtree.append(["Leaf", partition[0][-1], len(partition), total_instances])
         elif len(partition) > 0 and len(available_attributes) == 0:
-            print("0.2")
-            subtree = ['Leaf', majority_vote(partition), len(partition), len(current_instances)]
-            value_subtree.append(subtree)
-        #    CASE 3: no more instances to partition (empty partition) => backtrack and replace attribute node with majority vote leaf node
+            majority_class = majority_vote(partition)
+            value_subtree.append(["Leaf", majority_class, len(partition), total_instances])
         elif len(partition) == 0:
-            print("0.3")
-            return ['Leaf', majority_vote(prev), len(partition), len(current_instances)]
+            tree = ["Leaf", m_vote, majority_count, total_instances]
+            return tree 
         else:
-            subtree = tdidt(partition, available_attributes.copy(), attribute_domains.copy(), header.copy())
+            subtree = tdidt(partition, available_attributes.copy(), attribute_domains, header)
             value_subtree.append(subtree)
-            # need to append subtree to value_subtree and appropriately append value_subtree to tree
         tree.append(value_subtree)
-        prev = partition
-
     return tree
 
-def y_pred(instance, tree):
+def classifySample(instance, tree):
+    """ Classifies samples based on instances and a tree
+    Args:
+        instances(list): list of instances
+        tree(nested list): tree representation of data
+    Returns:
+        y: classify Sample
+    """
     y = None
     if tree[0] == 'Attribute':
-        y = y_pred(instance, tree[2:])
+        y = classifySample(instance, tree[2:])
     if tree[0][0] == 'Value':
         for i in range(len(tree)):
             if tree[i][1] in instance:
-                y = y_pred(instance, tree[i][2])
+                y = classifySample(instance, tree[i][2])
                 break
     if tree[0] == 'Leaf':
         return tree[1]
     return y
 
-
-def Rules(tree, rules, chain, previous_value, class_name):
+def Get_Rules(tree, rules, chain, previous_value, class_name):
+    """ prints out rules of the tree passed in
+    Args:
+        tree(nested list): tree representation of data
+        rules(list): empty list for rules
+        chain(str): chain sting
+        previous_vlaue(str): predifined empty string value
+        class_name(str): name of specific class
+    Returns:
+        rules(list): list of all rules that will help read the tree
+    """
     if tree[0] == 'Attribute':
         if chain:
             chain += ' AND' + ' ' + str(tree[1]) + ' ' + '==' + ' '
         else:
             chain = 'IF' + ' ' + str(tree[1]) + ' ' + '==' + ' '
-        rules = Rules(tree[2:], rules, chain, previous_value, class_name)
+        rules = Get_Rules(tree[2:], rules, chain, previous_value, class_name)
     if tree[0][0] == 'Value':
         for i in range(len(tree)):
             if previous_value and previous_value == chain[-len(previous_value):]:
@@ -192,7 +716,7 @@ def Rules(tree, rules, chain, previous_value, class_name):
                 chain = chain[:-length] + ' '
             chain += str(tree[i][1])
             previous_value = str(tree[i][1])
-            rules = Rules(tree[i][2], rules, chain, previous_value, class_name)
+            rules = Get_Rules(tree[i][2], rules, chain, previous_value, class_name)
     if tree[0] == 'Leaf':
         chain += ' THEN' + ' ' + class_name + ' ' + '=' + ' ' + str(tree[1])
         chain = re.sub(' +', ' ', chain)
@@ -200,362 +724,3 @@ def Rules(tree, rules, chain, previous_value, class_name):
     return rules
 
 
-
-
-
-def convert_rating(mpg_list):
-    """Gets the ratings of each list value
-    """
-    # fpr each index in the list
-    for i in range(len(mpg_list)):
-        mpg_list[i] = get_rating(mpg_list[i])
-    return mpg_list
-        
-def get_rating(mpg):
-    """determins the rating depending on the mpg
-    """
-    if mpg < 14:
-        return 1
-    elif mpg < 15:
-        return 2
-    elif mpg < 17:
-        return 3
-    elif mpg < 20:
-        return 4
-    elif mpg < 24:
-        return 5
-    elif mpg < 27:
-        return 6
-    elif mpg < 31:
-        return 7
-    elif mpg < 37:
-        return 8
-    elif mpg < 45:
-        return 9
-    return 10
-
-def convert_weight(weight):
-    """Converts the weight
-    """
-    res = []
-    for val in weight:
-        res.append(get_weight(val))
-    return res
-
-def get_weight(val):
-    """Weight converting helper function
-    """
-    if val < 2000:
-        category = 1
-    elif val < 2500:
-        category = 2
-    elif val < 3000:
-        category = 3
-    elif val < 3500:
-        category = 4
-    else:
-        category = 5
-    return category
-
-def get_rand_rows(table, num_rows):
-    """get random rows from the table
-    """
-    rand_rows = []
-    # for each index in the rumber of rows
-    for i in range(num_rows):
-        rand_rows.append(table.data[random.randint(0,len(table.data))-1])
-    return rand_rows
-
-def prediction_pretty_print(rows, actual, predicted):
-    """print helper function
-    """
-    for i in range(len(rows)):
-        print('instance:', rows[i])
-        print('class:', predicted[i], 'actual:', actual[i])
-
-
-
-def get_accuracy(actual, predicted):
-    """gets the accuracy of our predicted value
-    """
-    predicted_correct = 0
-    # for each index in the actual result
-    for i in range(len(actual)):
-        # if actual is the same as predicted
-        if actual[i] == predicted[i]:
-            predicted_correct+=1
-    return predicted_correct/len(actual)
-
-def get_from_folds(X_vals, y_vals, train_folds, test_folds):
-    """values from the folds
-    """
-    X_train = []
-    y_train = []
-    for row in train_folds:
-        for i in row:
-            X_train.append(X_vals[i])
-            y_train.append(y_vals[i])
-
-    X_test = []
-    y_test = []
-    for row in test_folds:
-        for i in row:
-            X_test.append(X_vals[i])
-            y_test.append(y_vals[i])
-
-    return X_train, y_train, X_test, y_test
-
-def print_tabulate(table, headers):
-    print(tabulate(table, headers, tablefmt="rst"))
-
-def add_conf_stats(matrix):
-    del matrix[0]
-    for i,row in enumerate(matrix):
-        row[0] = i+1
-        row.append(sum(row))
-        row.append(round(row[i+1]/row[-1]*100,2))
-        
-def titanic_stats(matrix):
-    for i,row in enumerate(matrix):
-        row.append(sum(row))
-        row.append(round(row[i]/row[-1]*100,2))
-        row.insert(0, i+1)
-    matrix.append(['Total', matrix[0][1]+matrix[1][1], matrix[0][2]+matrix[1][2], matrix[0][3]+matrix[1][3], \
-                   round(((matrix[0][1]+matrix[1][2])/(matrix[0][3]+matrix[1][3])*100),2)])
-    
-def weightedRandom(y_train, X_test):
-    randomWeightedChoice = [y_train[random.randint(0,len(y_train)-1)] for _ in X_test]
-    #print(randomWeightedChoice)
-    return randomWeightedChoice
-    
-def mean(x):
-    """Computes the mean of a list of values
-    """
-    return sum(x)/len(x)
-
-def compute_slope_intercept(x, y):
-    """
-    """
-    mean_x = mean(x)
-    mean_y = mean(y)
-    
-    m = sum([(x[i] - mean_x) * (y[i] - mean_y) for i in range(len(x))]) / sum([(x[i] - mean_x) ** 2 for i in range(len(x))])
-    # y = mx + b => b = y - mx
-    b = mean_y - m * mean_x
-    return float(m), float(b)
-
-def compute_euclidean_distance(v1, v2):
-    """
-    """
-    assert len(v1) == len(v2)
-    dist = np.sqrt(sum([(v1[i] - v2[i]) ** 2 for i in range(len(v1))]))
-    return dist
-
-def scale(vals, test_vals):
-    """
-    """
-    print()
-    print("vals: ", vals)
-    print()
-    print("test_vals: ", test_vals)
-    scaled_vals_list = []
-    maxs_list = []
-    mins_list = []
-
-    # for each list in list vals, get each values max and min and store in a list accordingly
-    for i in range(len(vals[0])):
-        maxs_list.append(max([val[i] for val in vals]))
-        mins_list.append(min([val[i] for val in vals]))
-
-    # for each list in list vals, scale each value according to the max and min to be between [0, 1]
-    for row in vals:
-        curr = []
-        for i in range(len(row)):
-            curr.append((row[i]-mins_list[i])/(maxs_list[i]-mins_list[i]))
-        scaled_vals_list.append(curr)
-
-    # for each list in list test_vals, scale each value according to the max and min to be between [0, 1]
-    for row in test_vals:
-        curr = []
-        for i in range(len(row)):
-            curr.append((row[i]-mins_list[i])/(maxs_list[i]-mins_list[i]))
-        scaled_vals_list.append(curr)
-    
-    # returns all scaled values from the vals list, then the scaled values from the test_vals list
-    return scaled_vals_list[:len(vals)], scaled_vals_list[len(vals):]
-
-def kneighbors_prep(scaled_X_train, scaled_X_test, n_neighbors):
-    """
-    """
-    scaled_X_train = copy.deepcopy(scaled_X_train)
-    scaled_X_test = copy.deepcopy(scaled_X_test)
-
-    # for each scaled list in scaled_X_train
-    for i, instance in enumerate(scaled_X_train):
-        distance = compute_euclidean_distance(instance, scaled_X_test) 
-        instance.append(i)  # append the original row index
-        instance.append(distance)   # append the distance
-    
-    
-    scaled_X_train_sorted = sorted(scaled_X_train, key=operator.itemgetter(-1)) # sort the list in assending order
-    top_k = scaled_X_train_sorted[:n_neighbors] # get a list of the top_k neighbors
-
-    distances_list = []
-    indices_list = []
-
-    # for each row in the top_k list, append the distances and indices to their own lists
-    for row in top_k:
-        distances_list.append(row[-1])
-        indices_list.append(row[-2])
-    
-    # return the distances and indices lists
-    return distances_list, indices_list
-
-def get_label(labels):
-    """
-    """
-    label_types = []
-    # for each value in the labels list
-    for val in labels:
-        # if we have not see that label type
-        if val not in label_types:
-            label_types.append(val) # append to list of label types
-    
-    count_list = [0 for label_type in label_types]
-
-    # for value in label types
-    for i, val in enumerate(label_types):
-        for label in labels:
-            # if the value is == to the label then incremept the count for that position
-            if val == label:
-                count_list[i] += 1
-
-    max_count = 0
-    label_prediction = ''
-    # for value in count_list
-    for i, val in enumerate(count_list):
-        if val > max_count:
-            label_prediction = label_types[i]
- 
-    return label_prediction
-
-def get_unique(vals):
-    """
-    """
-    unique = []
-    # for values in the vals list
-    for val in vals:
-        if val not in unique:
-            unique.append(val)
-    return unique
-
-def group_by(x_train, y_train):
-    """
-    """
-    unique = get_unique(y_train)
-    grouped = [[] for _ in unique]
-    # for each value in y_train
-    for i, val in enumerate(y_train):
-        for j, label in enumerate(unique):
-            if val == label:
-                grouped[j].append(i)
-    return grouped
-
-def shuffle(X, y):
-    """
-    """
-    for i in range(len(X)):
-        rand_index = random.randrange(0, len(X)) # [0, len(X))
-        X[i], X[rand_index] = X[rand_index], X[i] # this is the temporary value swap but in one line
-        if y is not None:
-            y[i], y[rand_index] = y[rand_index], y[i]
-
-def get_from_folds(X_vals, y_vals, train_folds, test_folds):
-    """
-    """
-    X_train = []
-    y_train = []
-    X_test = []
-    y_test = []
-
-    # for each fold
-    for row in train_folds:
-        for i in row:
-            X_train.append(X_vals[i])
-            y_train.append(y_vals[i])
-
-    # for each test fold
-    for row in test_folds:
-        for i in row:
-            X_test.append(X_vals[i])
-            y_test.append(y_vals[i])
-
-    return X_train, y_train, X_test, y_test
-
-# TODO: your reusable general-purpose functions here
-def get_column(table, i):
-    res = []
-    for row in table:
-        res.append(row[i])
-    return res
-
-def get_unique(vals):
-    unique = []
-    for val in vals:
-        if val not in unique:
-            unique.append(val)
-    return unique
-
-def priors(y_train):
-    unique = get_unique(y_train)
-    res = {}
-    for val in unique:
-        res[val] = 0
-    for val in y_train:
-        for u in unique:
-            if val == u:
-                res[u] += 1
-    for u in unique:
-        res[u] /= len(y_train)
-    return res
-
-def posteriors(X_train, y_train, priors):
-    posteriors = {} # create initial outermost dictionary
-
-    # for each key in the priors (y-train) dictionary
-    for key, v in priors.items():
-        #print("key:", key, "    val", v, "    X_train[0]:", X_train[0], "    len(X_train[0]):", len(X_train[0]))
-        posteriors[key] = {}
-        # for the amount of values in the current X_train list (e.g. [1, 5] len = 2)
-        for i in range(len(X_train[0])):
-            posteriors[key][i] = {}
-    
-    #print()
-    # for the length of X_train
-    for j in range(len(X_train)):
-        # for the amount of values in the current X_train list
-        for k in range(len(X_train[j])):
-            prior_label = y_train[j]    # store the y_train value for the current X_train position
-            posterior_label = X_train[j][k] # store the current value in the current X_train list
-            #print("     y_train[j]:", y_train[j])
-            #print("      X_train[j][k]:", X_train[j][k])
-            denominator = priors[prior_label] * len(y_train)    # stores the denominator based on mulitplying y_train label odds by the length of y table
-            #print("      priors[prior_label]:", priors[prior_label], "    len(y_train):", len(y_train), "     denominator:", denominator)
-            #print()
-            # if the current value in the current X_train list   exists in   current table then give it its posterior value 
-            #print("if else posterior_label:", posterior_label, "    posteriors[prior_label][k]:", posteriors[prior_label][k])
-            if posterior_label in posteriors[prior_label][k]:
-                #print("     posteriors[prior_label][k][posterior_label]:", posteriors[prior_label][k][posterior_label])
-                posteriors[prior_label][k][posterior_label] = ((posteriors[prior_label][k][posterior_label] * denominator) + 1) / denominator
-                #print("     posteriors[prior_label][k][posterior_label]2:", posteriors[prior_label][k][posterior_label])
-            else:
-                posteriors[prior_label][k][posterior_label] = 1 / denominator
-                #print("     posteriors[prior_label][k][posterior_label]4:", posteriors[prior_label][k][posterior_label])
-    return posteriors
-
-def get_prediction_index(vals):
-    max_index = 0
-    for i in range(len(vals)):
-        if vals[i] > vals[max_index]:
-            max_index = i
-    return max_index

@@ -1,22 +1,8 @@
-##############################################
-# Programmer: Carter Mooring & Armando Valdez
-# Class: CPCS 322-02, Spring 2021
-# Spotify Api Project
-# 4/18/21
-# 
-# 
-# Description: This program opens and interprets a .csv file and stores its contents in a table.
-#               The tables are then used to perform various task such as variable cleaning and specific value returns.
-##############################################
-
+import mysklearn.myutils as myutils
 import copy
 import csv
-from os.path import join
-import statistics
-from os import terminal_size, write 
-from tabulate import tabulate # uncomment if you want to use the pretty_print() method
-import mysklearn.myutils as myutils
-# install tabulate with: pip install tabulate
+from os import truncate 
+from tabulate import tabulate
 
 # required functions/methods are noted with TODOs
 # provided unit tests are in test_mypytable.py
@@ -48,12 +34,6 @@ class MyPyTable:
         """
         print(tabulate(self.data, headers=self.column_names))
 
-    def pretty_print2(list):
-        """Prints the a list in a nicely formatted grid structure.
-        """
-        for i in range(len(list)):
-            print(list[i])
-
     def get_shape(self):
         """Computes the dimension of the table (N x M).
 
@@ -66,6 +46,7 @@ class MyPyTable:
         
         return N, M
 
+  
     def get_column(self, col_identifier, include_missing_values=True):
         """Extracts a column from the table data as a list.
 
@@ -81,52 +62,61 @@ class MyPyTable:
         Notes:
             Raise ValueError on invalid col_identifier
         """
-        # If false then first remove NA values before continuing
-        if include_missing_values == False:
-            MyPyTable.remove_rows_with_missing_values(self)
+        col_vals = []
         
-        # If col[i] is the column we are looking for, break to keep the i index location
-        for i in range(len(self.column_names)):
-            if self.column_names[i].lower() == col_identifier.lower():
-                break
-        
-        single_col_list = []
+        if self.data == []:
+            return []
+        # Check to see if col_idnetifier is a valid column name
+        if isinstance(col_identifier, str):
+            try:
+                col_identifier = self.column_names.index(col_identifier)
+            except ValueError:
+                print(col_identifier, "is not a valid header name")
+        # Check to see if col_idnetifier is a valid column index
+        if isinstance(col_identifier, int):
+            try:
+                if col_identifier < len(self.column_names):
+                    pass
+            except ValueError:
+                print(col_identifier, "is not a valid index")
 
         for row in self.data:
-            single_col_list.append(row[i])
+            if include_missing_values == True:
+                col_vals.append(row[col_identifier])
+            elif include_missing_values == False:
+                if(row[col_identifier] != "NA" and row[col_identifier] != "N/A" and row[col_identifier] != ''):
+                    col_vals.append(row[col_identifier])
+        return col_vals
 
-        return single_col_list
-
+   
     def convert_to_numeric(self):
         """Try to convert each value in the table to a numeric type (float).
 
         Notes:
             Leave values as is that cannot be converted to numeric.
         """
+
         for row in self.data:
             for i in range(len(row)):
                 try:
-                    numeric_value = float(row[i])
-                    row[i] = numeric_value
+                    float_val = float(row[i])
+                    row[i] = float_val
                 except ValueError:
-                    #print(row[i], "cannot be converted to a Float")
-                    None
+                   pass
         pass
 
+ 
     def drop_rows(self, rows_to_drop):
         """Remove rows from the table data.
 
         Args:
             rows_to_drop(list of list of obj): list of rows to remove from the table data.
         """
-        temp_table = copy.deepcopy(self.data)
         for row in self.data:
-            for row2 in rows_to_drop:
-                if row == row2:
-                    temp_table.remove(row)
-        
-        self.data = temp_table
-        pass 
+            if row in rows_to_drop:
+                self.data.remove(row)
+        pass
+
 
     def load_from_file(self, filename):
         """Load column names and data from a CSV file.
@@ -143,32 +133,13 @@ class MyPyTable:
             Calls convert_to_numeric() after load
         """
         with open(filename) as csv_file:
-            csv_read = csv.reader(csv_file)
-
-            for row in csv_read:
-                self.data.append(row)       #store values in object list, line by line
-            
-            self.column_names = self.data[0] # store first row (header) of table
-            del self.data[0]                # delete the first row of the table
-        
-        self.convert_to_numeric()   
-
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                self.data.append(row)
+            self.column_names = self.data[0]
+            del self.data[0]
+        self.convert_to_numeric()
         return self 
-
-    def save_to_file2(self, filename):
-        """Save column names and data to a CSV file inside a folder.
-
-        Args:
-            filename(str): relative path for the CSV file to save the contents to.
-
-        Notes:
-            Use the csv module.
-        """
-        with open("./output_data/" + filename, 'w') as csv_file:
-            csv_write = csv.writer(csv_file)
-            csv_write.writerow(self.column_names)
-            csv_write.writerows(self.data)
-        pass
 
     def save_to_file(self, filename):
         """Save column names and data to a CSV file.
@@ -180,9 +151,9 @@ class MyPyTable:
             Use the csv module.
         """
         with open(filename, 'w') as csv_file:
-            csv_write = csv.writer(csv_file)
-            csv_write.writerow(self.column_names)
-            csv_write.writerows(self.data)
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(self.column_names)
+            csv_writer.writerows(self.data)
         pass
 
     def find_duplicates(self, key_column_names):
@@ -198,48 +169,40 @@ class MyPyTable:
             Subsequent occurrence(s) of a row are considered the duplicate(s). The first instance is not
                 considered a duplicate.
         """
-        total_dups = []
+        dups = []
         seen = []
-        header_range = []
-
-        for head in key_column_names:
-            header_range.append(self.column_names.index(head))
+        indices = []
         
+        for val in key_column_names:
+            index = self.column_names.index(val)
+            indices.append(index)
+
         for row in self.data:
             passed = True
             if seen == []:
                 passed = False
             else:
-                for val in seen:
+                for r in seen:
                     passed = True
-                    for head in header_range:
-                        if row[head] != val[head]:
+                    for i in indices:
+                        if row[i] != r[i]:
                             passed = False
-                    
                     if passed:
                         break
-
-            if passed:
-                total_dups.append(row)
-            elif seen.append(row):
+            if passed == True:
+                dups.append(row)
+            else:
                 seen.append(row)
-        
-        return total_dups
-    
-
+        return dups
 
     def remove_rows_with_missing_values(self):
         """Remove rows from the table data that contain a missing value ("NA").
         """
-        table_deep_copy = copy.deepcopy(self.data)
-        
+        copy_data = copy.deepcopy(self.data)
         for row in self.data:
-            for i in range(len(row)):
-                if row[i] == "NA" or row[i] == '':
-                    if row in table_deep_copy:
-                        table_deep_copy.remove(row)
-        
-        self.data = table_deep_copy         # Store table with no NA values back into self
+                if "NA" in row or '' in row:
+                    copy_data.remove(row)
+        self.data = copy_data
         pass
 
     def replace_missing_values_with_column_average(self, col_name):
@@ -248,32 +211,18 @@ class MyPyTable:
         Args:
             col_name(str): name of column to fill with the original average (of the column).
         """
-        row_list = []
-        avg = 0
-        count = 0
-        row_count = 0
-
-        # If col[i] is the column we are looking for, break to keep the i index location
-        for i in range(len(self.column_names)):
-            if self.column_names[i].lower() == col_name.lower():
-                break
-        
+        col_index = self.column_names.index(col_name)
+        col_sum = 0
+        num_col = 0
         for row in self.data:
-            row_count += 1
-            if row[i] == "NA":  
-                row_list.append(row_count)      # Mark the row location to be changed later
-            else:
-                # prep values to calculate the avg once finished iterating
-                count += 1
-                avg = avg + row[i]
-        
-        avg = avg / count
-
-        # Iterate through list of rows with missing values and change them to avg values
-        for NAs in row_list:
-            self.data[NAs - 1][i] = avg
-        
-        pass 
+            if row[col_index] != "NA":
+                num_col += 1
+                col_sum += row[col_index]
+        col_avg = col_sum / num_col
+        for row in self.data:
+            if row[col_index] == "NA":
+                row[col_index] = col_avg 
+        pass
 
     def compute_summary_statistics(self, col_names):
         """Calculates summary stats for this MyPyTable and stores the stats in a new MyPyTable.
@@ -282,46 +231,43 @@ class MyPyTable:
             col_names(list of str): names of the continuous columns to compute summary stats for.
 
         Returns:
-            MyPyTable: stores the summary stats computed.
+            MyPyTable: stores the summary stats computed. The column names and their order is as follows: ["attribute", "min", "max", "mid", "avg", "median"]
         """
+        indices = []
         stats = []
-        header = ["attribute", "min", "max", "mid", "avg", "median"]
-        # iterate the col_names list given
-        for j in range(len(col_names)):
-            # iterate through headers
-            for i in range(len(self.column_names)):
-                # If col[i] is the column we are looking for, break to keep the i index location
-                if self.column_names[i].lower() == col_names[j].lower():
-                    col_list = []
-                    stat_results = []
-                    
-                    # store all of header i's values in their own list
-                    for row in self.data:
-                        if(row[i] != "NA"):
-                            col_list.append(float(row[i]))
-                    
-                    # check to see if the col_list given is empty
-                    if col_list != []:
-                        stat_results.append(self.column_names[i])   # append the column header name
+        stats_title = ["attribute", "min", "max", "mid", "avg", "median"]
+        if col_names == [] or self.data == []:
+            pass
+        else:
+            for val in col_names:
+                index = self.column_names.index(val)
+                indices.append(index)
+            
+            for i in indices:
+                temp = []
+                col_values = []
+                for row in self.data:
+                    if row[i] != "NA" and isinstance(row[i], str) == False:
+                        col_values.append(row[i])
+                col_values.sort()
+                index = len(col_values) // 2
+                
+                #compute median
+                if len(col_values) % 2:
+                    median = col_values[index]
+                else:
+                    median = sum(col_values[index - 1: index + 1]) / 2
 
-                        minimum = min(col_list)                     # calcualte the minimum
-                        stat_results.append(minimum)
-                        
-                        maximum = max(col_list)                     # calculate the maximum
-                        stat_results.append(maximum)
-                        
-                        mid = ((minimum + maximum) / 2)             # calculate the mid (half way between min and max),
-                        stat_results.append(mid)
+                temp.append(self.column_names[i])
+                temp.append(min(col_values))
+                temp.append(max(col_values))
+                temp.append((min(col_values) + max(col_values))/2)
+                temp.append(sum(col_values)/len(col_values))
+                temp.append(median)
+                stats.append(temp)
 
-                        mean = statistics.mean(col_list)            # calculate the avg
-                        stat_results.append(mean)
-
-                        median = statistics.median(col_list)        # calculate the median
-                        stat_results.append(median)
-                    else:
-                        return MyPyTable(header, [])                # list was empty so return empty list
-            stats.append(stat_results)                              # append the statistics list for each column requested 
-        return MyPyTable(header, stats)
+        newTable = MyPyTable(stats_title, stats)
+        return newTable
 
     def perform_inner_join(self, other_table, key_column_names):
         """Return a new MyPyTable that is this MyPyTable inner joined with other_table based on key_column_names.
@@ -333,46 +279,36 @@ class MyPyTable:
         Returns:
             MyPyTable: the inner joined table.
         """
-        header = (self.column_names + list(set(other_table.column_names) - set(self.column_names)))     # stores the new joined header that will be returned after join
-        inner_table = []       # stores the joined rows on a match
-        key_header_indexes = [] # trackers the indexes of  the key_col_names compared to the tables header locations 
+        new_column_names = []
+        new_data = []
 
-        # iterate through the key_cols_names given and find their locations in each table
-        for keys in key_column_names:
-            # Grab the column positions in both tables for the key value
-            for i in range(len(self.column_names)):
-                if self.column_names[i].lower() == keys.lower():
-                    break
-            for j in range(len(other_table.column_names)):
-                if other_table.column_names[j].lower() == keys.lower():
-                    break
-            
-            # store header index locations in a list
-            temp = []
-            temp.append(i)
-            temp.append(j)
-            key_header_indexes.append(temp)
-            
-        # iterate through the first tables rows
-        for row in self.data:
-            # iterate through the second tables rows
-            for row2 in other_table.data:
-                indexes = key_header_indexes[0]            # grab the first key_col_name index locations
-                # if match for first key_col_name index locations
-                if row[indexes[0]] == row2[indexes[1]]:
-                    # Now check if we were given 2 key_col_name's
-                    if len(key_column_names) > 1:
-                        # given 2 headers so now grab the second key_col_name index locations
-                        indexes2 = key_header_indexes[1]
-                        # check if the second key_col_name index is also a match
-                        if row[indexes2[0]] == row2[indexes2[1]]:
-                            # Match in both header index loactions in both tables so append 
-                            inner_table.append((row + list(set(row2) - set(row))))
-                    else:
-                        # just one header to check so easy append
-                        inner_table.append((row + list(set(row2) - set(row))))
+        right_column_names = copy.deepcopy(other_table.column_names)
 
-        return MyPyTable(header, inner_table)
+        for name in key_column_names:
+            right_column_names.remove(name)
+
+        new_column_names = self.column_names + right_column_names
+
+        for left_row in self.data:
+            left_key = []
+            for column in key_column_names:
+                index = self.column_names.index(column)
+                val = left_row[index]
+                left_key.append(val)
+            for right_row in other_table.data:
+                right_key = []
+                for column in key_column_names:
+                    index = other_table.column_names.index(column)
+                    val = right_row[index]
+                    right_key.append(val)
+                if left_key == right_key:
+                    right_copy = copy.deepcopy(right_row)
+                    for val in right_key:
+                        right_copy.remove(val)
+                    row_tba = left_row + right_copy
+                    new_data.append(row_tba)
+        
+        return MyPyTable(new_column_names, new_data)
 
     def perform_full_outer_join(self, other_table, key_column_names):
         """Return a new MyPyTable that is this MyPyTable fully outer joined with other_table based on key_column_names.
@@ -387,67 +323,77 @@ class MyPyTable:
         Notes:
             Pad the attributes with missing values with "NA".
         """
-        new_header = []
-        cols1 = []
-        cols2 = []
-        keys1 = []
-        keys2 = []
-        joined_table = []
+        new_column_names = []
+        new_data = []
+        indicies = []
 
-        # iterate through both tables column names to append to join header
-        for val in self.column_names:
-            new_header.append(val)
-        for val in other_table.column_names:
-            if val not in new_header:
-                new_header.append(val)
-        
-        
-        # for key column names passed in, grab indexes in each table
-        for val in key_column_names:
-            cols1.append(self.column_names.index(val))
-            cols2.append(other_table.column_names.index(val))
-        
-        
-        # iterate through all of self, append indexes
-        for i in range(len(self.data)):
-            curr = []
-            for j in cols1:
-                curr.append(self.data[i][j])
-            keys1.append(curr)
-        
-        # iterate through all of other, append indexes
-        for i in range(len(other_table.data)):
-            curr = []
-            for j in cols2:
-                curr.append(other_table.data[i][j])
-            keys2.append(curr)
-        
-        num_extra_rows = len(new_header) - len(self.column_names)       # grab amount of extra rows left
+        left_column_names = copy.deepcopy(self.column_names)
+        right_column_names = copy.deepcopy(other_table.column_names)
 
-        # for amount of keys 
-        for i in range(len(keys1)):
-            current = copy.deepcopy(self.data[i])
-            # key match so join rows
-            if keys1[i] in keys2:
-                for val in other_table.column_names:
-                    if val not in self.column_names:
-                        current.append(other_table.data[keys2.index(keys1[i])][other_table.column_names.index(val)]) # doesnt work since i corresponds to first table  
-            else: 
-                # keys don't match add in row with 'NA's
-                for i in range(num_extra_rows):
-                    current.append('NA')
-            joined_table.append(current)
+        left_data = copy.deepcopy(self.data)
 
-        # Now for any missing rows, add them to table
-        for i in range(len(keys2)):
-            # not matching keys arnt added, do here
-            if keys2[i] not in keys1: 
-                current = []
-                for col_name in new_header:
-                    if col_name in other_table.column_names: 
-                        current.append(other_table.data[i][other_table.column_names.index(col_name)])
-                    else:
-                        current.append('NA')  
-                joined_table.append(current)
+        for name in key_column_names:
+            left_column_names.remove(name)
+            right_column_names.remove(name)
 
-        return MyPyTable(new_header, joined_table)
+        new_column_names = self.column_names + right_column_names
+
+        for left_row in left_data:
+            left_key = []
+            match = False
+            for name in key_column_names:
+                index = self.column_names.index(name)
+                val = left_row[index]
+                left_key.append(val)
+            match_index = 0
+            for right_row in other_table.data:
+                right_key = []
+                for name in key_column_names:
+                    index = other_table.column_names.index(name)
+                    val = right_row[index]
+                    right_key.append(val)
+
+                if left_key == right_key:
+                    indicies.append(match_index)
+                    match = True
+                    right_copy = copy.deepcopy(right_row)
+
+                    for val in right_key:
+                        right_copy.remove(val)
+                    
+                    row_tba = left_row + right_copy
+
+                    new_data.append(row_tba)
+                match_index += 1
+            if (not match):
+                row_tba = left_row
+
+                for _ in right_column_names:
+                    row_tba.append("NA")
+
+                new_data.append(row_tba)
+        na_indices = []
+        populated_indices = []
+        
+        for i in range(len(new_column_names)):
+            if not new_column_names[i] in other_table.column_names:
+                na_indices.append(i)
+            else:
+                populated_indices.append(other_table.column_names.index(new_column_names[i]))
+        
+        right_data = copy.deepcopy(other_table.data)
+
+        for row in right_data:
+            for i in range(len(row)):
+                if i not in populated_indices:
+                    del row[i]
+        
+        for row in right_data:
+            for i in na_indices:
+                row.insert(i, "NA")
+
+        for i in range(len(right_data)):
+            if i not in indicies:
+                new_data.append(right_data[i])
+
+        return MyPyTable(new_column_names, new_data)
