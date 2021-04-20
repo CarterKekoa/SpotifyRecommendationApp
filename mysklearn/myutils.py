@@ -723,4 +723,9 @@ def Get_Rules(tree, rules, chain, previous_value, class_name):
         rules.append(chain)
     return rules
 
+def format_num(list):
+    for i in range(len(list)):
+        list[i] = round(list[i] * 100, 2)
+    return list
+
 
