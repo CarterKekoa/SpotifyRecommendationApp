@@ -354,6 +354,10 @@ def compute_euclidean_distance(v1, v2):
 def scale(vals, test_vals):
     """
     """
+    print()
+    print("vals: ", vals)
+    print()
+    print("test_vals: ", test_vals)
     scaled_vals_list = []
     maxs_list = []
     mins_list = []

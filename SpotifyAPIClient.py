@@ -126,12 +126,16 @@ class SpotifyAPI(object):
         return r.json()
 
     def parse_for_track_id(self, response):
+        "returns a dict of the track name (key), and its id (val). It also returns a list of those tracks global popularity rating"
         track_ids = {}
+        tracks_popularities = []
         for val in response['tracks']['items']:
-            track_name = (val['track']['name'])
-            track_id = (val['track']['id'])
-            track_ids[track_name] = track_id
-        return track_ids
+            if(val['track']['popularity'] > 9):
+                track_name = (val['track']['name'])
+                track_id = (val['track']['id'])
+                tracks_popularities.append(val['track']['popularity'])
+                track_ids[track_name] = track_id
+        return track_ids, tracks_popularities
 
     def get_track_audio_features(self, track_id):
         base_url = 'https://api.spotify.com/v1/audio-features'
