@@ -397,23 +397,23 @@ def convert_to_rank(list):
     return list
 
 def get_rank(pop):
-    if pop <= 10:
+    if pop < 11:
         return 1
-    elif pop <= 20:
+    elif pop < 21:
         return 2
-    elif pop <= 30:
+    elif pop < 31:
         return 3
-    elif pop <= 40:
+    elif pop < 41:
         return 4
-    elif pop <= 50:
+    elif pop < 51:
         return 5
-    elif pop <= 60:
+    elif pop < 61:
         return 6
-    elif pop <= 70:
+    elif pop < 71:
         return 7
-    elif pop <= 80:
+    elif pop < 81:
         return 8
-    elif pop <= 90:
+    elif pop < 91:
         return 9
     else:
         return 10
