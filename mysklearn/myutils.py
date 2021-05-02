@@ -728,4 +728,148 @@ def format_num(list):
         list[i] = round(list[i] * 100, 2)
     return list
 
+def bin_vals(list):
+    bins = [[],[],[],[],[],[],[],[],[],[]]
+    for val in list:
+        if val < 11:
+            bins[0].append(val)
+        elif val < 21:
+            bins[1].append(val)
+        elif val < 31:
+            bins[2].append(val)     
+        elif val < 41:
+            bins[3].append(val)
+        elif val < 51:
+            bins[4].append(val)
+        elif val < 61:
+            bins[5].append(val)
+        elif val < 71:
+            bins[6].append(val)
+        elif val < 81:
+            bins[7].append(val)
+        elif val < 91:
+            bins[8].append(val)
+        else:
+            bins[9].append(val)
+    return bins
 
+def bin_loudness(list):
+    bins = [[],[],[],[],[]]
+    for val in list:
+        if val > -5.6322:
+            bins[0].append(val)
+        elif val > -10.5644:
+            bins[1].append(val)
+        elif val > -15.4966:
+            bins[2].append(val)
+        elif val > -20.4288:
+            bins[3].append(val)
+        else:
+            bins[4].append(val)
+    return bins
+
+def get_bin_count(bins):
+    for bin in bins:
+        bin[0] = len(bin[0])
+    return bins
+
+def unique_index(vals, i): 
+    unique = []
+    for row in vals:
+        if row[i] not in unique:
+            unique.append(row[i])
+    return unique
+
+def tdidt_forest(current_instances, available_attributes, attribute_domains, header, F): 
+    # basic approach (uses recursion!!):
+    subset_attributes = compute_random_subset(available_attributes, F)
+    # select an attribute to split on
+    split_attribute = select_attribute(current_instances, subset_attributes, attribute_domains, header)
+    #print('splitting on', split_attribute)
+    available_attributes.remove(split_attribute) # cannot split on same attr twice in a branch
+    # python is pass by object reference!!
+    tree = ['Attribute', split_attribute]
+
+    # group data by attribute domains (creates pairwise disjoint partitions)
+    partitions = partition_instances(current_instances, split_attribute, attribute_domains, header)
+    #print('partitions:', partitions)
+
+    prev = []
+    prev_instances = 0
+    # for each partition, repeat unless one of the following occurs (base case)
+    for attribute_value, partition in partitions.items():
+        #print('working with partition for', attribute_value)
+        value_subtree = ['Value', attribute_value]
+        subtree = []
+        # TODO: appending leaf nodes and subtrees appropriately to value_subtree
+        #    CASE 1: all class labels of the partition are the same => make a leaf node
+        if len(partition) > 0 and check_all_same_class(partition): # all same class checks if all the other values equal the first one
+            subtree = ['Leaf', partition[0][-1], len(partition), len(current_instances)]
+            value_subtree.append(subtree)
+        #    CASE 2: no more attributes to select (clash) => handle clash w/majority vote leaf node
+        elif len(partition) > 0 and len(available_attributes) == 0:
+            subtree = ['Leaf', majority_vote(partition), len(partition), len(current_instances)]
+            value_subtree.append(subtree)
+        #    CASE 3: no more instances to partition (empty partition) => backtrack and replace attribute node with majority vote leaf node
+        elif len(partition) == 0:
+            return ['Leaf', majority_vote(prev), len(prev), prev_instances]
+        else:
+            subtree = tdidt_forest(partition, available_attributes.copy(), attribute_domains.copy(), header.copy(), F)
+            value_subtree.append(subtree)
+            # need to append subtree to value_subtree and appropriately append value_subtree to tree
+        tree.append(value_subtree)
+        prev = partition
+        prev_instances = len(current_instances)
+
+    return tree
+
+def compute_random_subset(values, num_values): 
+    shuffled = values[:] # shallow copy 
+    random.shuffle(shuffled)
+    return sorted(shuffled[:num_values])
+
+def compute_bootstrapped_sample(table):
+    n = len(table)
+    sample = []
+    for _ in range(n):
+        rand_index = random.randrange(0, n)
+        sample.append(table[rand_index])
+    return sample
+
+def convert_tempo(tempo):
+    res = []
+    for val in tempo:
+        res.append(get_tempo(val))
+    return res
+
+def get_tempo(val):
+    if val < 70.809:
+        curr = 1
+    elif val < 106.141:
+        curr = 2
+    elif val < 141.473:
+        curr = 3
+    elif val < 176.805:
+        curr = 4
+    else:
+        curr = 5
+    return curr
+
+def convert_loudness(loudness):
+    res = []
+    for val in loudness:
+        res.append(get_loudness(val))
+    return res
+
+def get_loudness(val):
+    if val > -5.6322:
+        curr = 1
+    elif val > -10.5644:
+        curr = 2
+    elif val > -15.4966:
+        curr = 3
+    elif val > -20.4288:
+        curr = 4
+    else:
+        curr = 5
+    return curr

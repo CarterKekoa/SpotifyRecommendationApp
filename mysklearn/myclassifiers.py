@@ -1,4 +1,5 @@
 import mysklearn.myutils as myutils
+import mysklearn.myevaluation as myevaluation
 
 class MySimpleLinearRegressor:
     """Represents a simple linear regressor.
@@ -309,19 +310,98 @@ class MyDecisionTreeClassifier:
         for rule in rules:
             print(rule)
 
-    # BONUS METHOD
-    def visualize_tree(self, dot_fname, pdf_fname, attribute_names=None):
-        """BONUS: Visualizes a tree via the open source Graphviz graph visualization package and its DOT graph language (produces .dot and .pdf files).
+class MyRandomForestClassifier: 
+    """Represents a decision tree classifier.
+
+    Attributes:
+        X_train(list of list of obj): The list of training instances (samples). 
+                The shape of X_train is (n_train_samples, n_features)
+        y_train(list of obj): The target y values (parallel to X_train). 
+            The shape of y_train is n_samples
+        tree(nested list): The extracted tree model.
+
+    Notes:
+        Loosely based on sklearn's DecisionTreeClassifier: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+        Terminology: instance = sample = row and attribute = feature = column
+    """
+    def __init__(self, F=2, N=4, M=3):
+        """Initializer for MyDecisionTreeClassifier.
+
+        """
+        self.X_train = None 
+        self.y_train = None
+        self.trees = []
+        self.N = N
+        self.M = M
+        self.F = F
+
+    def fit(self, X_train, y_train):
+        """Fits a decision tree classifier to X_train and y_train using the TDIDT (top down induction of decision tree) algorithm.
 
         Args:
-            dot_fname(str): The name of the .dot output file.
-            pdf_fname(str): The name of the .pdf output file generated from the .dot file.
-            attribute_names(list of str or None): A list of attribute names to use in the decision rules
-                (None if a list is not provided and the default attribute names based on indexes (e.g. "att0", "att1", ...) should be used).
+            X_train(list of list of obj): The list of training instances (samples). 
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of obj): The target y values (parallel to X_train)
+                The shape of y_train is n_train_samples
 
-        Notes: 
-            Graphviz: https://graphviz.org/
-            DOT language: https://graphviz.org/doc/info/lang.html
-            You will need to install graphviz in the Docker container as shown in class to complete this method.
+        Notes:
+            Since TDIDT is an eager learning algorithm, this method builds a decision tree model
+                from the training data.
+            Build a decision tree using the nested list representation described in class.
+            Store the tree in the tree attribute.
+            Use attribute indexes to construct default attribute names (e.g. "att0", "att1", ...).
         """
-        pass # TODO: (BONUS) fix this
+        header = ['att' + str(i) for i in range(len(X_train[0]))]
+        attribute_domains = {}
+        for i, val in enumerate(header):
+            attribute_domains[val] = myutils.unique_index(X_train, i)
+
+        self.X_train = X_train
+        self.y_train = y_train
+        sample_X_train, sample_x_test, sample_y_train, sample_y_test = myevaluation.train_test_split(X_train, y_train, test_size=0.33, shuffle=True)
+        train = [sample_X_train[i] + [sample_y_train[i]] for i in range(len(sample_X_train))]
+        
+        for _ in range(self.N):
+            available_attributes = header.copy()
+            self.trees.append(myutils.tdidt_forest(myutils.compute_bootstrapped_sample(train), available_attributes, attribute_domains, header, self.F))
+        
+        accuracies = []
+        for tree in self.trees:
+            header = ['att' + str(i) for i in range(len(sample_x_test[0]))]
+            prediction = []
+            for row in sample_x_test:
+                prediction.append(myutils.tdidt_predict(header, tree, row))
+            accuracy = 0
+            for i in range(len(prediction)):
+                if prediction[i] == sample_y_test[i]:
+                    accuracy += 1
+            accuracy /= len(sample_y_test)
+            accuracies.append([accuracy])
+        # find m most accurate
+        m_trees = []
+        for i in range(len(accuracies)):
+            accuracies[i].append(i)
+        accuracies = sorted(accuracies)
+        for i in range(self.M):
+            m_trees.append(self.trees[accuracies[-(i+1)][1]])
+        self.trees = m_trees
+        
+    def predict(self, X_test):
+        """Makes predictions for test instances in X_test.
+
+        Args:
+            X_test(list of list of obj): The list of testing samples
+                The shape of X_test is (n_test_samples, n_features)
+
+        Returns:
+            y_predicted(list of obj): The predicted target y values (parallel to X_test)
+        """
+        header = ['att' + str(i) for i in range(len(X_test[0]))]
+        res = []
+        for row in X_test:
+            curr = []
+            for tree in self.trees:
+                curr.append(myutils.tdidt_predict(header, tree, row))
+            res.append(curr)
+        return myutils.get_majority_votes(res)
+
