@@ -44,9 +44,6 @@ def index():
                 print(attribute_values)
             else:
                 print("hello2")
-                
-            
-
         except:
             print("bad")
     
