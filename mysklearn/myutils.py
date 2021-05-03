@@ -3,7 +3,6 @@ import operator
 import math
 import re
 from functools import reduce
-from tabulate import tabulate
 from operator import itemgetter
 import random
 
@@ -228,15 +227,6 @@ def add_conf_stats(matrix):
         row[0] = i+1
         row.append(sum(row))
         row.append(round(row[i+1]/row[-1]*100,2))
-
-def print_tabulate(table, headers):
-    """Prints our matrix nicely
-
-    Args:
-        table: List of all table values
-        headers: List of our column headers
-    """
-    print(tabulate(table, headers, tablefmt="rst"))
 
 def get_priors(y_train):
     """Gets priors based on y_train results passed in
