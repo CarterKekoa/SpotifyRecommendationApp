@@ -466,8 +466,6 @@ def get_accuracy(y_split, predicted):
             correct += 1
     return correct / len(predicted)
 
-
-
 def titanic_stats(matrix):
     """creates a row that displays the total of all columns in a matrix at the bottom of the matric passed in
 
@@ -581,6 +579,7 @@ def select_attribute(instances, available_att):
     att_idx = attribute_entropies.index(min_entropy)
     return available_att[att_idx]
 
+
 def partition_instances(instances, split_attribute, attribute_domains, header):
     """Selects a partition instance
     Args:
@@ -621,13 +620,18 @@ def majority_vote(partition):
     Returns:
         class_with_majority: majority class name
     """
-    class_count = {}
+    if len(partition) == 0:
+        return 0
+    unique = []
+    counts = []
     for row in partition:
-        if row[-1] not in class_count:
-            class_count[row[-1]] = 0
-        class_count[row[-1]] += 1
-    class_with_majority = max(class_count.items(), key=itemgetter(1))[0]
-    return class_with_majority
+        if row[-1] not in unique:
+            unique.append(row[-1])
+            counts.append(1)
+        else:
+            counts[unique.index(row[-1])] += 1
+    return unique[counts.index(max(counts))]
+
 
 def tdidt(current_instances, available_attributes, attribute_domains, header):
     """computes TDIDT on a set of values
@@ -671,6 +675,21 @@ def tdidt(current_instances, available_attributes, attribute_domains, header):
             value_subtree.append(subtree)
         tree.append(value_subtree)
     return tree
+
+
+def tdidt_predict(header, tree, instance):
+    info_type = tree[0]
+    if info_type == 'Attribute':
+        attribute_index = header.index(tree[1])
+        instance_value = instance[attribute_index]
+        for i in range(2,len(tree)):
+            value_list = tree[i]
+            if value_list[1] == instance_value:
+                # we have a match! recurse
+                return tdidt_predict(header, value_list[2], instance)
+    else: #leaf
+        return tree[1] # leaf class label
+
 
 def classifySample(instance, tree):
     """ Classifies samples based on instances and a tree
@@ -800,7 +819,7 @@ def tdidt_forest(current_instances, available_attributes, attribute_domains, hea
     # basic approach (uses recursion!!):
     subset_attributes = compute_random_subset(available_attributes, F)
     # select an attribute to split on
-    split_attribute = select_attribute(current_instances, subset_attributes, attribute_domains, header)
+    split_attribute = select_attribute(current_instances, subset_attributes)
     #print('splitting on', split_attribute)
     available_attributes.remove(split_attribute) # cannot split on same attr twice in a branch
     # python is pass by object reference!!
@@ -852,6 +871,17 @@ def compute_bootstrapped_sample(table):
         sample.append(table[rand_index])
     return sample
 
+def get_majority_votes(vals):
+    res = []
+    for row in vals:
+        unique_vals = get_unique(row)
+        counts = [0 for _ in range(len(unique_vals))]
+        for val in row:
+            counts[unique_vals.index(val)] += 1
+        res.append(unique_vals[counts.index(max(counts))])
+    return res
+
+
 def convert_tempo(tempo):
     res = []
     for val in tempo:
@@ -892,3 +922,33 @@ def get_loudness(val):
 
 def compute_average(list):
     return sum(list) / len(list)
+
+def bin_genre(vals):
+    # ['dance pop', 'post-teen pop', 'electropop', 'indie poptimism']
+    bins = [[],[],[],[]]
+    for val in vals:
+        if val == 'dance pop':
+            bins[0].append(val)
+        elif val == 'post-teen pop':
+            bins[1].append(val)
+        elif val == 'electropop':
+            bins[2].append(val)
+        else:
+            bins[3].append(val)
+    return bins
+
+def seperate_songs_on_genre(data):
+    genre1 = []
+    genre2 = []
+    genre3 = []
+    genre4 = []
+    for row in data:
+        if row[10] == 'dance pop':
+            genre1.append(row)
+        elif row[10] == 'post-teen pop':
+            genre2.append(row)
+        elif row[10] == 'electropop':
+            genre3.append(row)
+        elif row[10] == 'indie poptimism':
+            genre4.append(row)
+    return genre1, genre2, genre3, genre4
