@@ -52,7 +52,7 @@ def index():
                 predicted = predict_well(predict_set)
                 print("predicted: ", predicted)
             else:
-                print("hello2")
+                print("helloalso")
                 
         except:
             print("bad")
