@@ -61,6 +61,7 @@ class MyNaiveBayesClassifier:
         y_predicted = []
         for test in X_test:
             probs = myutils.compute_probs(test, self.priors, self.posteriors)
+            print("probs:", probs)
             prediction = myutils.predict_from(probs)
             y_predicted.append(prediction)
         return y_predicted

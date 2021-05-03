@@ -1,8 +1,6 @@
 import mysklearn.myutils as myutils
 import copy
 import csv
-from os import truncate 
-from tabulate import tabulate
 
 # required functions/methods are noted with TODOs
 # provided unit tests are in test_mypytable.py
@@ -29,10 +27,6 @@ class MyPyTable:
             data = []
         self.data = copy.deepcopy(data)
 
-    def pretty_print(self):
-        """Prints the table in a nicely formatted grid structure.
-        """
-        print(tabulate(self.data, headers=self.column_names))
 
     def get_shape(self):
         """Computes the dimension of the table (N x M).
@@ -63,7 +57,6 @@ class MyPyTable:
             Raise ValueError on invalid col_identifier
         """
         col_vals = []
-        print(self.column_names)
         if self.data == []:
             return []
         # Check to see if col_idnetifier is a valid column name

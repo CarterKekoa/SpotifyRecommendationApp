@@ -3,7 +3,6 @@ import operator
 import math
 import re
 from functools import reduce
-from tabulate import tabulate
 from operator import itemgetter
 import random
 
@@ -229,15 +228,6 @@ def add_conf_stats(matrix):
         row.append(sum(row))
         row.append(round(row[i+1]/row[-1]*100,2))
 
-def print_tabulate(table, headers):
-    """Prints our matrix nicely
-
-    Args:
-        table: List of all table values
-        headers: List of our column headers
-    """
-    print(tabulate(table, headers, tablefmt="rst"))
-
 def get_priors(y_train):
     """Gets priors based on y_train results passed in
 
@@ -257,6 +247,8 @@ def get_priors(y_train):
             unique.append(label)
             counts.append(1)
     
+    print("unique: ", unique)
+    print("counts: ", counts)
     denom = len(y_train)
     priors_dict = {}
     for i in range(len(unique)):
@@ -319,6 +311,7 @@ def compute_probs(test, priors, posteriors):
     Returns:
         probs_dictionary: Dictionary of all probability values
     """
+
     probs_dictionary = {}
     for k, v in priors.items():
         prior = v
@@ -326,13 +319,13 @@ def compute_probs(test, priors, posteriors):
         probs = []
         probs.append(prior)
         for i in range(len(test)):
-            if test[i] in dictionary[i]:  
+            if test[i] in dictionary[i]: 
                 probs.append(dictionary[i][test[i]])
             else:
                 probs.append(0)
         probability = reduce(multiply, probs)
         probs_dictionary[k] = probability
-    
+    print(probs_dictionary)
     return probs_dictionary
 
 def predict_from(probs_dictionary):
