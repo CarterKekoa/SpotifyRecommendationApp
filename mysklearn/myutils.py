@@ -257,6 +257,8 @@ def get_priors(y_train):
             unique.append(label)
             counts.append(1)
     
+    print("unique: ", unique)
+    print("counts: ", counts)
     denom = len(y_train)
     priors_dict = {}
     for i in range(len(unique)):
@@ -326,6 +328,7 @@ def compute_probs(test, priors, posteriors):
         probs = []
         probs.append(prior)
         for i in range(len(test)):
+            #print("test[i]: ", test[i], "     dictionary[i]: ", dictionary[i])
             if test[i] in dictionary[i]:  
                 probs.append(dictionary[i][test[i]])
             else:

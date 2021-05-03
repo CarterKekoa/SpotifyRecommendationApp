@@ -20,46 +20,47 @@
             </select>
         </div>
         <br>
+        <br>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">
                 Danceability
             </span>
-            <input type="text" class="form-control" placeholder="(e.g. 0.675)" id="inputDanceability" name="danceability" aria-label="Danceability" aria-describedby="basic-addon1">
+            <input type="text" class="form-control" placeholder="(e.g. 1-10)" id="inputDanceability" name="danceability" aria-label="Danceability" aria-describedby="basic-addon1">
         </div>
         <br>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">
                 Energy
             </span>
-            <input type="text" class="form-control" placeholder="(e.g. 0.931)" id="inputEnergy" name="energy" aria-label="Energy" aria-describedby="basic-addon1">
+            <input type="text" class="form-control" placeholder="(e.g. 1-10)" id="inputEnergy" name="energy" aria-label="Energy" aria-describedby="basic-addon1">
         </div>
         <br>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">
                 Loudness
             </span>
-            <input type="text" class="form-control" placeholder="(e.g. -3.432)" id="inputLoudness" name="loudness" aria-label="Loudness" aria-describedby="basic-addon1">
+            <input type="text" class="form-control" placeholder="(e.g. 1-5)" id="inputLoudness" name="loudness" aria-label="Loudness" aria-describedby="basic-addon1">
         </div>
         <br>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">
                 Speechiness
             </span>
-            <input type="text" class="form-control" placeholder="(e.g. 0.0742)" id="inputSpeechiness" name="speechiness" aria-label="Speechiness" aria-describedby="basic-addon1">
+            <input type="text" class="form-control" placeholder="(e.g. 1-10)" id="inputSpeechiness" name="speechiness" aria-label="Speechiness" aria-describedby="basic-addon1">
         </div>
         <br>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">
                 Tempo
             </span>
-            <input type="text" class="form-control" placeholder="(e.g. 124.008)" id="inputTempo" name="tempo" aria-label="Tempo" aria-describedby="basic-addon1">
+            <input type="text" class="form-control" placeholder="(e.g. 1-5)" id="inputTempo" name="tempo" aria-label="Tempo" aria-describedby="basic-addon1">
         </div>
         <br>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">
                 Valence
             </span>
-            <input type="text" class="form-control" placeholder="(e.g. 0.613)" id="inputValence" name="valence" aria-label="Valence" aria-describedby="basic-addon1">
+            <input type="text" class="form-control" placeholder="(e.g. 1-10)" id="inputValence" name="valence" aria-label="Valence" aria-describedby="basic-addon1">
         </div>
         <br>
 
@@ -67,11 +68,25 @@
         <button class="btn btn-sm btn-primary btn-block" type="submit" name="button" value="submitAttsButton" method="POST">Submit</button>
     </form>
     
-    {% for att in atts %}
-        <div>
-            <label for={{att}}>{{att}}</label>
-        </div>
-    {% endfor %}
+    <!-- 
+        {% for att in atts %}
+            <div>
+                <label for={{att}}>{{att}}</label>
+            </div>
+        {% endfor %}
+    -->
+
+    {% if prediction %}
+        {% for pred in prediction %}
+            <div class="container">
+                <h2>Predicted Popularity: </h2>
+                <p>The Popularity of this song on a scale of 1-10 is:</p>
+                <div>
+                    <label for={{pred}}>{{pred}}</label>
+                </div>
+            </div> 
+        {% endfor %}
+    {% endif%}
 
 </div>
 

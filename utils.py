@@ -8,6 +8,8 @@ Description: This program holds reusable utility functions
 """
 import math
 import copy
+import linecache
+import sys
 from mysklearn.mypytable import MyPyTable
 def get_frequencies(table, col_name):
     """Get the total number of frequecies for every unique value in a column
@@ -403,3 +405,26 @@ def create_rt_list(table, genres):
         plot_data.append(rt_dict[key])
     
     return plot_data
+
+def PrintException():
+    """This Parces an exceptions info and prints useful information for tracing the error
+    """
+    exc_type, exc_obj, tb = sys.exc_info()
+    f = tb.tb_frame
+    lineno = tb.tb_lineno
+    filename = f.f_code.co_filename
+    linecache.checkcache(filename)
+    line = linecache.getline(filename, lineno, f.f_globals)
+    print(bcolors.FAIL, 'EXCEPTION({}) IN ({}, LINE {} "{}"): {}'.format(exc_type, filename, lineno, line.strip(), exc_obj), bcolors.ENDC)
+    print 
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'

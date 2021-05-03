@@ -63,7 +63,6 @@ class MyPyTable:
             Raise ValueError on invalid col_identifier
         """
         col_vals = []
-        print(self.column_names)
         if self.data == []:
             return []
         # Check to see if col_idnetifier is a valid column name
