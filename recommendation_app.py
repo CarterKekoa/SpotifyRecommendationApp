@@ -22,17 +22,11 @@ app = Flask(__name__)
 app.config["APP_DIR"] = os.path.dirname(os.path.abspath(__file__)) # absolute path to this file
 app.config["APP_DATA"] = os.path.join(app.config["APP_DIR"], "data")
 app.config["SPOTIFY_DATA"] = os.path.join(app.config["APP_DATA"], "track-audio-features-all.txt")
+app.config["PICKLE_DATA"] = os.path.join(app.config["APP_DATA"], "rules.p")
 
 
 @app.route("/", methods=["POST", "GET"])
 def index():
-    myNb = train_data() 
-    # print(myNb)
-    # print(myNb.X_train)
-    # print(myNb.y_train)
-    # print(myNb.priors)
-    # print(myNb.posteriors)
-
     predicted = None
     attribute_values = []
     predict_set=[]
@@ -52,10 +46,11 @@ def index():
                 attribute_values.append(float(request.form['speechiness']))
                 attribute_values.append(float(request.form['tempo']))
                 attribute_values.append(float(request.form['valence']))
+
                 print(attribute_values)
                 predict_set.append(attribute_values)
-                predicted = myNb.predict(predict_set)
-                print(predicted[0])
+                predicted = predict_well(predict_set)
+                print("predicted: ", predicted)
             else:
                 print("hello2")
                 
@@ -65,45 +60,27 @@ def index():
     
     return render_template('main.html', atts=attribute_values, prediction=predicted)
 
-
-def train_data():
-    track_data = MyPyTable().load_from_file(app.config["SPOTIFY_DATA"])
-
-    genre = track_data.get_column('playlist_subgenre')
-    danceability = myutils.convert_to_rank(myutils.format_num(track_data.get_column('danceability')))
-    energy = myutils.convert_to_rank(myutils.format_num(track_data.get_column('energy')))
-    loudness = myutils.convert_loudness(track_data.get_column('loudness'))
-    speechiness = myutils.format_num(track_data.get_column('speechiness'))
-    tempo = myutils.convert_tempo(track_data.get_column('tempo'))
-    valence = myutils.convert_to_rank(myutils.format_num(track_data.get_column('valence')))
-
-    x_vals = [[genre[i], danceability[i], energy[i], loudness[i], speechiness[i], tempo[i], valence[i]] for i in range(len(danceability))]
-    y_vals = myutils.convert_to_rank(track_data.get_column("track_popularity"))
-    
-    myNb = MyNaiveBayesClassifier()
-    myNb.fit(x_vals, y_vals)
-    print(myNb.priors)
-    return myNb
-
 # one for the /predict 
 @app.route("/predict", methods=["GET"])
 def predict():
     # goal is to extract the 4 attribute values from query string
     # use the request.args dictionary
+    # test url = "https://interview-flask-app.herokuapp.com/predict?sub-genre=electropop&danceability=7&energy=5&loudness=3&speechiness=2&tempo=2&valence=4"
+        
     sub_genre = request.args.get("sub-genre", "") # check for the key, and the default
-    danceability = request.args.get("danceability", "")
-    energy = request.args.get("energy", "")
-    loudness = request.args.get("loudness", "")
-    speechiness = request.args.get("speechiness", "")
-    tempo = request.args.get("tempo", "")
-    valence = request.args.get("valence", "")
+    danceability = int(request.args.get("danceability", ""))
+    energy = int(request.args.get("energy", ""))
+    loudness = int(request.args.get("loudness", ""))
+    speechiness = int(request.args.get("speechiness", ""))
+    tempo = int(request.args.get("tempo", ""))
+    valence = int(request.args.get("valence", ""))
     print("Endpoint Vals:", sub_genre, danceability, energy, loudness, speechiness, tempo, valence)
 
     # get a prediction for this unseen instance via the tree
     # return the prediction as a JSON response
 
     # TODO: fix the hardcoding
-    prediction = predict_well([sub_genre, danceability, energy, loudness, speechiness, tempo, valence]) # if anything goes wrong, this function will return None
+    prediction = predict_well([[sub_genre, danceability, energy, loudness, speechiness, tempo, valence]]) # if anything goes wrong, this function will return None
     if prediction is not None:
         result = {"prediction": prediction}
         return jsonify(result), 200
@@ -119,18 +96,24 @@ def predict_well(instance):
     #   process as a python object (predict())
     # import pickle and load the header and interview tree
     #   as Python objects we can use for step 2
-    infile = open("APIServiceFun/tree.p", "rb") # r for read, b for binary
+    infile = open(app.config["PICKLE_DATA"], "rb") # r for read, b for binary
     priors, posteriors = pickle.load(infile)
     infile.close()
-    print("priors: ", priors)
-    print("posteriors: ", posteriors)
 
     # 2. use the posteriors to make a prediction
     try:
         # test url = "https://interview-flask-app.herokuapp.com/predict?level=Junior&language=Java&tweets=yes&phd=no"
-        return tdidt_predict(priors, posteriors, instance) # recursive function
+        return nb_predict(priors, posteriors, instance) # recursive function
     except:
         return None
+
+def nb_predict(priors, posteriors, instance):
+    y_predicted = []
+    for test in instance:
+        probs = myutils.compute_probs(test, priors, posteriors)
+        prediction = myutils.predict_from(probs)
+        y_predicted.append(prediction)
+    return y_predicted
 
 if __name__ == "__main__":
     port = os.environ.get("PORT", 5000)

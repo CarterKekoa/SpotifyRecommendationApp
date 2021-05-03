@@ -59,8 +59,6 @@ class MyNaiveBayesClassifier:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
         y_predicted = []
-        print()
-        print("X_test:", X_test)
         for test in X_test:
             probs = myutils.compute_probs(test, self.priors, self.posteriors)
             print("probs:", probs)

@@ -321,6 +321,7 @@ def compute_probs(test, priors, posteriors):
     Returns:
         probs_dictionary: Dictionary of all probability values
     """
+
     probs_dictionary = {}
     for k, v in priors.items():
         prior = v
@@ -328,14 +329,13 @@ def compute_probs(test, priors, posteriors):
         probs = []
         probs.append(prior)
         for i in range(len(test)):
-            #print("test[i]: ", test[i], "     dictionary[i]: ", dictionary[i])
-            if test[i] in dictionary[i]:  
+            if test[i] in dictionary[i]: 
                 probs.append(dictionary[i][test[i]])
             else:
                 probs.append(0)
         probability = reduce(multiply, probs)
         probs_dictionary[k] = probability
-    
+    print(probs_dictionary)
     return probs_dictionary
 
 def predict_from(probs_dictionary):
