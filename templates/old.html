@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{%block content%}
+
+<title>Spotify Recommendation App</title>
+<h1>Spotify Recommendation App</h1>
+
+<div class="container">
+    <h2>Attribute Selection: </h2>
+    <p>Select which attributes to train on.</p>
+
+    <form method="POST">
+      {% for att in attributes %}
+        {% if att in chosen_atts %}
+            <div>
+                <input type="checkbox" id={{att}} name=attribute value={{att}} checked>
+                <label for={{att}}>{{att}}</label>
+            </div>
+        {% else %}
+            <div>
+                <input type="checkbox" id={{att}} name=attribute value={{att}}>
+                <label for={{att}}>{{att}}</label>
+            </div>
+        {% endif %}
+      {% endfor %}
+      <br>
+      <button class="btn btn-sm btn-primary btn-block" type="submit" name="button" value="submitAttsButton" method="POST">Submit</button>
+    </form>
+</div>
+
+{% endblock content %}

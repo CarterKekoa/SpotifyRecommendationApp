@@ -1,100 +1,104 @@
 # we are going to use Flask, a micro web framework
 import os
 import pickle
-from flask import Flask, jsonify, request 
+from flask import Flask, jsonify, request, render_template
+import importlib
+import SpotifyAPIClient
+import pprint
+import csv
+import random
+from SpotifyAPIClient import SpotifyAPI
+import mysklearn.myutils
+import mysklearn.myutils as myutils
+import mysklearn.mypytable
+from mysklearn.mypytable import MyPyTable 
 
 # make a Flask app
 app = Flask(__name__)
 
+app.config["APP_DIR"] = os.path.dirname(os.path.abspath(__file__)) # absolute path to this file
+app.config["APP_DATA"] = os.path.join(app.config["APP_DIR"], "data")
+app.config["SPOTIFY_DATA"] = os.path.join(app.config["APP_DATA"], "track-audio-features-all.txt")
+
+
+@app.route("/", methods=["POST", "GET"])
+def index():
+    track_data = MyPyTable().load_from_file(app.config["SPOTIFY_DATA"])
+    attribute_values = []
+    requires_format = ['danceability', 'energy', 'speechiness', 'valence', 'acousticness', 'instrumentalness', 'liveness']
+    # client_id = 'd7a2e6f4a8434550baa5eda073f0a6a3'
+    # client_secret = 'def46d47ba584e378b7667645666a468'
+    # playlist_id = '7L736vCRhBe5EapwwkutUl'
+
+    if request.method == "POST":
+        try:
+            if request.form['button'] == 'submitAttsButton':
+                print("hello")
+                attribute_values.append([request.form['sub-genre']])
+                attribute_values.append([float(request.form['danceability'])])
+                attribute_values.append([float(request.form['energy'])])
+                attribute_values.append([float(request.form['loudness'])])
+                attribute_values.append([float(request.form['speechiness'])])
+                attribute_values.append([float(request.form['tempo'])])
+                attribute_values.append([float(request.form['valence'])])
+                print(attribute_values)
+            else:
+                print("hello2")
+                
+            
+
+        except:
+            print("bad")
+    
+    return render_template('main.html', atts=attribute_values)
+
+
+
+
 # we need to add two routes (functions that handle requests)
 # one for the homepage
-@app.route("/", methods=["GET"])
-def index():
-    # return content and a status code
-    return "<h1>Welcome to my App</h1>", 200
+@app.route("/old", methods=["POST", "GET"])
+def old():
+    track_data = MyPyTable().load_from_file(app.config["SPOTIFY_DATA"])
+    chosen_attributes = []
+    requires_format = ['danceability', 'energy', 'speechiness', 'valence', 'acousticness', 'instrumentalness', 'liveness']
+    chosen_ones = []
+    # client_id = 'd7a2e6f4a8434550baa5eda073f0a6a3'
+    # client_secret = 'def46d47ba584e378b7667645666a468'
+    # playlist_id = '7L736vCRhBe5EapwwkutUl'
 
-# one for the /predict 
-@app.route("/predict", methods=["GET"])
-def predict():
-    # goal is to extract the 4 attribute values from query string
-    # use the request.args dictionary
-    level = request.args.get("level", "") # check for the key, and the default
-    lang = request.args.get("lang", "")
-    tweets = request.args.get("tweets", "")
-    phd = request.args.get("phd", "")
-    print("level:", level, lang, tweets, phd)
-    # task: extract the remaining 3 args
+    if request.method == "POST":
+        try:
+            if request.form['button'] == 'submitAttsButton':
+                chosen_attributes = request.form.getlist("attribute")
+                for att in chosen_attributes:
+                    print(att)
+                    if att in requires_format:
+                        chosen_ones.append(myutils.format_num(track_data.get_column(att)))
+                    else:
+                        chosen_ones.append(track_data.get_column(att))
+                print(chosen_ones)
 
-    # get a prediction for this unseen instance via the tree
-    # return the prediction as a JSON response
+                # dance_bins = myutils.bin_vals(danceability)
+                # energy_bins = myutils.bin_vals(energy)
+                # loudness_bins = myutils.bin_loudness(loudness)
+                # speechiness_bins = myutils.bin_vals(speechiness)
+                # tempo_bins = myutils.bin_tempo(tempo)
+                # valence_bins = myutils.bin_vals(valence)
 
-    # TODO: fix the hardcoding
-    prediction = predict_interviews_well([level, lang, tweets, phd]) # if anything goes wrong, this function will return None
-    if prediction is not None:
-        result = {"prediction": prediction}
-        return jsonify(result), 200
-    else:
-        # failure!!
-        return "Error making prediction", 400
-
-
-def tdidt_predict(header, tree, instance):
-    info_type = tree[0]
-    if info_type == "Attribute":
-        print()
-        attribute_index = header.index(tree[1])
-        print("tree[1]: ", tree[1])
-        print("attribute_index: ", attribute_index)
-        instance_value = instance[attribute_index]
-        print("instance_value: ", instance_value)
-        # now I need to find which "edge/branch" to follow recursively
-        for i in range(2, len(tree)):
-            value_list = tree[i]
-            if value_list[1] == instance_value:
-                # we have a match! recurse!
-                return tdidt_predict(header, value_list[2], instance)
-    else: # "Leaf"
-        return tree[1] # leaf class label
+                # dance_bin_count = [[len(dance_bins[0])],[len(dance_bins[1])],[len(dance_bins[2])],[len(dance_bins[3])],[len(dance_bins[4])],[len(dance_bins[5])],[len(dance_bins[6])],[len(dance_bins[7])],[len(dance_bins[8])],[len(dance_bins[9])]]
 
 
-# this is the predict for pa6 my decision tree classifier
-def predict_interviews_well(instance):
-    # 1. we need a tree (and its header) to make a prediction
-    #   we need to save a trained model (fit()) to a file
-    #   so we can load that file into memory in another python
-    #   process as a python object (predict())
-    # import pickle and load the header and interview tree
-    #   as Python objects we can use for step 2
-    infile = open("APIServiceFun/tree.p", "rb") # r for read, b for binary
-    header, tree = pickle.load(infile)
-    infile.close()
-    print("header: ", header)
-    print("tree: ", tree)
+                # x_vals = ['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100']
+                # y_vals = []
+                # for i in range(len(dance_bin_count)):
+                #     y_vals.append(dance_bin_count[i][0])
+        except:
+            print("bad")
 
-    # 2. use the tree to make a prediction
-    try:
-        # test url = "https://interview-flask-app.herokuapp.com/predict?level=Junior&language=Java&tweets=yes&phd=no"
-        return tdidt_predict(header, tree, instance) # recursive function
-    except:
-        return None
+    return render_template('old.html', chosen_atts=chosen_attributes, attributes=track_data.column_names)
 
 if __name__ == "__main__":
-    # deployment notes
-    # two main categories of how to deploy
-    # host your own server OR use a cloud provider
-    # there are lots of options for cloud providers... AWS, Heroku, Azure, DigtalOcean, Vercel, ...
-    # we are going to use Heroku (Backend as a Service BaaS)
-    # there are lots of ways to deploy a flask app to Heroku
-    # 1. deploy the app directly as a web app running on the ubuntu "stack" 
-    # (e.g. Procfile and requirements.txt)
-    # 2. deploy the app as a Docker container running on the container "stack"
-    # (e.g. Dockerfile)
-    # 2.A. build the docker image locally and push it to a container registry (e.g. Heroku's)
-    # **2.B.** define a heroku.yml and push our source code to Heroku's git repo
-    #  and Heroku will build the docker image for us
-    # 2.C. define a main.yml and push our source code to Github, where a Github Action
-    # builds the image and pushes it to the Heroku registry
-
     port = os.environ.get("PORT", 5000)
-    app.run(debug=False, host="0.0.0.0", port=port) # TODO: set debug to False for production
+    app.run(debug=True, host="0.0.0.0", port=port) # TODO: set debug to False for production
     # by default, Flask runs on port 5000

@@ -4,4 +4,75 @@
 <title>Spotify Recommendation App</title>
 <h1>Spotify Recommendation App</h1>
 
+<div class="container">
+    <h2>Attribute Input: </h2>
+    <p>Input the attributes of a song to predict the Popularity for.</p>
+
+    <form method="POST">
+        <div class="dropdown">
+            <label for="sub-genre">Choose a Sub-Genre:</label>
+
+            <select name="sub-genre" id="sub-genre">
+            <option value="dance pop">Dance Pop</option>
+            <option value="post-teen pop">Post-Teen Pop</option>
+            <option value="electropop">Electropop</option>
+            <option value="indie poptimism">Indie Poptimism</option>
+            </select>
+        </div>
+        <br>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">
+                Danceability
+            </span>
+            <input type="text" class="form-control" placeholder="(e.g. 0.675)" id="inputDanceability" name="danceability" aria-label="Danceability" aria-describedby="basic-addon1">
+        </div>
+        <br>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">
+                Energy
+            </span>
+            <input type="text" class="form-control" placeholder="(e.g. 0.931)" id="inputEnergy" name="energy" aria-label="Energy" aria-describedby="basic-addon1">
+        </div>
+        <br>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">
+                Loudness
+            </span>
+            <input type="text" class="form-control" placeholder="(e.g. -3.432)" id="inputLoudness" name="loudness" aria-label="Loudness" aria-describedby="basic-addon1">
+        </div>
+        <br>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">
+                Speechiness
+            </span>
+            <input type="text" class="form-control" placeholder="(e.g. 0.0742)" id="inputSpeechiness" name="speechiness" aria-label="Speechiness" aria-describedby="basic-addon1">
+        </div>
+        <br>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">
+                Tempo
+            </span>
+            <input type="text" class="form-control" placeholder="(e.g. 124.008)" id="inputTempo" name="tempo" aria-label="Tempo" aria-describedby="basic-addon1">
+        </div>
+        <br>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">
+                Valence
+            </span>
+            <input type="text" class="form-control" placeholder="(e.g. 0.613)" id="inputValence" name="valence" aria-label="Valence" aria-describedby="basic-addon1">
+        </div>
+        <br>
+
+        <hr>
+        <button class="btn btn-sm btn-primary btn-block" type="submit" name="button" value="submitAttsButton" method="POST">Submit</button>
+    </form>
+    
+    {% for att in atts %}
+        <div>
+            <label for={{att}}>{{att}}</label>
+        </div>
+    {% endfor %}
+
+</div>
+
 {% endblock content %}
