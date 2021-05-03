@@ -768,6 +768,22 @@ def bin_loudness(list):
             bins[4].append(val)
     return bins
 
+def bin_tempo(list):
+    bins = [[],[],[],[],[]]
+    for val in list:
+        if val < 70.809:
+            bins[0].append(val)
+        elif val < 106.141:
+            bins[1].append(val)
+        elif val < 141.473:
+            bins[2].append(val)
+        elif val < 176.805:
+            bins[3].append(val)
+        else:
+            bins[4].append(val)
+    return bins
+
+
 def get_bin_count(bins):
     for bin in bins:
         bin[0] = len(bin[0])
@@ -873,3 +889,6 @@ def get_loudness(val):
     else:
         curr = 5
     return curr
+
+def compute_average(list):
+    return sum(list) / len(list)
