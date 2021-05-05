@@ -24,7 +24,6 @@ app.config["APP_DATA"] = os.path.join(app.config["APP_DIR"], "data")
 app.config["SPOTIFY_DATA"] = os.path.join(app.config["APP_DATA"], "track-audio-features-all.txt")
 app.config["PICKLE_DATA"] = os.path.join(app.config["APP_DATA"], "rules.p")
 
-
 @app.route("/", methods=["POST", "GET"])
 def index():
     predicted = None

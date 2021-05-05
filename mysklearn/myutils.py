@@ -2,6 +2,7 @@ import copy
 import operator
 import math
 import re
+from mysklearn.mypytable import MyPyTable 
 from functools import reduce
 from operator import itemgetter
 import random
@@ -247,8 +248,6 @@ def get_priors(y_train):
             unique.append(label)
             counts.append(1)
     
-    print("unique: ", unique)
-    print("counts: ", counts)
     denom = len(y_train)
     priors_dict = {}
     for i in range(len(unique)):
@@ -325,7 +324,6 @@ def compute_probs(test, priors, posteriors):
                 probs.append(0)
         probability = reduce(multiply, probs)
         probs_dictionary[k] = probability
-    print(probs_dictionary)
     return probs_dictionary
 
 def predict_from(probs_dictionary):
@@ -945,3 +943,29 @@ def seperate_songs_on_genre(data):
         elif row[10] == 'indie poptimism':
             genre4.append(row)
     return genre1, genre2, genre3, genre4
+
+def get_popularity_avg(track_data, att_index):
+    att_list = [[],[],[],[],[],[],[],[],[],[]]
+    for row in track_data.data:
+        popularity = row[3]
+        if popularity < 11:
+            att_list[0].append(row[att_index])
+        elif popularity < 21:
+            att_list[1].append(row[att_index])
+        elif popularity < 31:
+            att_list[2].append(row[att_index])
+        elif popularity < 41:
+            att_list[3].append(row[att_index])
+        elif popularity < 51:
+            att_list[4].append(row[att_index])
+        elif popularity < 61:
+            att_list[5].append(row[att_index])
+        elif popularity < 71:
+            att_list[6].append(row[att_index])
+        elif popularity < 81:
+            att_list[7].append(row[att_index])
+        elif popularity < 91:
+            att_list[8].append(row[att_index])
+        else:
+            att_list[9].append(row[att_index])
+    return att_list
