@@ -64,8 +64,8 @@ def index():
 def predict():
     # goal is to extract the 4 attribute values from query string
     # use the request.args dictionary
-    # test url = "https://interview-flask-app.herokuapp.com/predict?sub-genre=electropop&danceability=7&energy=5&loudness=3&speechiness=2&tempo=2&valence=4"
-        
+    # test url = "https://spotify-popularity-classifier.herokuapp.com/predict?sub-genre=electropop&danceability=7&energy=5&loudness=3&speechiness=2&tempo=2&valence=4"
+    
     sub_genre = request.args.get("sub-genre", "") # check for the key, and the default
     danceability = int(request.args.get("danceability", ""))
     energy = int(request.args.get("energy", ""))

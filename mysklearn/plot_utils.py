@@ -7,7 +7,7 @@ Programming Assignment #3
 Description: This program holds reusable plotting functions
 """
 import matplotlib.pyplot as plt
-import utils
+import mysklearn.utils as utils
 def frequency_chart(x, y, title, xlabel, ylabel):
     """Methodd used to produce frequency charts
 
