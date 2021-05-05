@@ -1,7 +1,7 @@
 # SpotifyRecommendationApp
 **Developed by Armando Valdez & Carter Mooring**
 
-This is a Flask App deployed on Heroku with Docker that makes use of a Spotify song dataset with 5000 values to train on. A user can send a 
+This is a Flask App deployed on [Heroku](https://hub.docker.com/r/continuumio/anaconda3) with Docker that makes use of a Spotify song dataset with 5000 values to train on. A user can send a 
 request to our endpoint or interact with our web app to enter song attribute values and predict that tracks popularity.
 
 *Find the Deployed Version Here: https://spotify-popularity-classifier.herokuapp.com*
